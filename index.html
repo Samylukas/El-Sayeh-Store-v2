@@ -355,6 +355,23 @@
     let selectedProd = null;
     let selectedStockEditProduct = null;
 
+    // استرجاع الفواتير المحلية غير المرفوعة
+    function getPendingOfflineInvoices() {
+        try {
+            return JSON.parse(localStorage.getItem('pendingOfflineInvoices') || '[]');
+        } catch(e) { return []; }
+    }
+
+    function savePendingOfflineInvoice(inv) {
+        let pending = getPendingOfflineInvoices();
+        pending.push(inv);
+        localStorage.setItem('pendingOfflineInvoices', JSON.stringify(pending));
+    }
+
+    function clearPendingOfflineInvoices() {
+        localStorage.removeItem('pendingOfflineInvoices');
+    }
+
     function togglePasswordVisibility() {
         const passInput = document.getElementById('entryPassInput');
         if (passInput) {
@@ -447,32 +464,69 @@
         script.id = scriptId;
         script.src = src;
         script.onerror = function() {
-            if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🔴 تعذر الاتصال بالسيرفر.'; }
+            if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🔴 يعمل في الوضع الأوفلاين'; }
         };
         document.body.appendChild(script);
     }
 
+    function syncPendingInvoicesFirst(callback) {
+        let pending = getPendingOfflineInvoices();
+        if (pending.length === 0) {
+            if (callback) callback();
+            return;
+        }
+
+        const ind = document.getElementById('syncIndicator');
+        if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🟡 جاري رفع فواتير الأوفلاين للسيرفر...'; }
+
+        // رفع الفواتير المعلقة واحداً تلو الآخر
+        let count = 0;
+        pending.forEach(inv => {
+            jsonpRequest("saveInvoice", inv, "handleSaveCallback");
+            count++;
+        });
+
+        clearPendingOfflineInvoices();
+        setTimeout(() => {
+            if (callback) callback();
+        }, 1500);
+    }
+
     function fetchCloudData() {
-        window.handleCloudInvoicesResponse = function(resData) {
-            const ind = document.getElementById('syncIndicator');
-            if (resData && resData.status === "success") {
-                if (resData.users && resData.users.length > 0) {
-                    cloudUsers = resData.users;
-                    populateUsersDropdown();
-                    populateLoginUsersSelect();
+        // رفع أي فواتير أوفلاين مخزنة أولاً لمنع مسحها
+        syncPendingInvoicesFirst(() => {
+            window.handleCloudInvoicesResponse = function(resData) {
+                const ind = document.getElementById('syncIndicator');
+                if (resData && resData.status === "success") {
+                    if (resData.users && resData.users.length > 0) {
+                        cloudUsers = resData.users;
+                        populateUsersDropdown();
+                        populateLoginUsersSelect();
+                    }
+                    if (resData.products) products = resData.products;
+
+                    // الدمج الذكي للفواتير: عدم التضحية بالفواتير المحفوظة محلياً
+                    if (resData.invoices) {
+                        let cloudInvMap = new Map();
+                        resData.invoices.forEach(i => cloudInvMap.set(i.id, i));
+                        savedInvoices.forEach(i => cloudInvMap.set(i.id, i));
+                        savedInvoices = Array.from(cloudInvMap.values()).sort((a,b) => a.id - b.id);
+                    }
+
+                    if (resData.nextInvoiceId) {
+                        let maxId = savedInvoices.length > 0 ? Math.max(...savedInvoices.map(i => i.id)) : 1000;
+                        invoiceCounter = Math.max(resData.nextInvoiceId, maxId + 1);
+                    }
+
+                    renderStockTable();
+                    updateLowStockAlert();
+                    populatePartnerDropdown();
+                    if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
                 }
-                if (resData.products) products = resData.products;
-                if (resData.invoices) savedInvoices = resData.invoices;
-                if (resData.nextInvoiceId) invoiceCounter = resData.nextInvoiceId;
+            };
 
-                renderStockTable();
-                updateLowStockAlert();
-                populatePartnerDropdown();
-                if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
-            }
-        };
-
-        jsonpRequest("getData", null, "handleCloudInvoicesResponse");
+            jsonpRequest("getData", null, "handleCloudInvoicesResponse");
+        });
     }
 
     function populateLoginUsersSelect() {
@@ -774,7 +828,8 @@
     function filterStockTable(val) { renderStockTable(val); }
 
     function prepareNewInvoice() {
-        activeInvoiceId = invoiceCounter;
+        let maxExistingId = savedInvoices.length > 0 ? Math.max(...savedInvoices.map(i => i.id)) : 1000;
+        activeInvoiceId = Math.max(invoiceCounter, maxExistingId + 1);
         document.getElementById('invNum').textContent = activeInvoiceId;
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -933,9 +988,13 @@
             savedInvoices[existingIdx] = savedInv;
         } else {
             savedInvoices.push(savedInv);
-            if (activeInvoiceId === invoiceCounter) invoiceCounter++;
+            if (activeInvoiceId >= invoiceCounter) invoiceCounter = activeInvoiceId + 1;
         }
 
+        // الحفظ المحلي الاحتياطي للأوفلاين
+        savePendingOfflineInvoice(savedInv);
+
+        // محاولة المزامنة أونلاين
         syncToCloud("saveInvoice", savedInv);
 
         alert(`✅ تم حفظ الفاتورة رقم #${savedInv.id} بنجاح!`);

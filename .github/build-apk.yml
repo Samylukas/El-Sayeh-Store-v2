@@ -1,0 +1,61 @@
+name: Build Native Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Clean & Prepare Web Assets
+        run: |
+          rm -rf www
+          mkdir -p www
+          cp index.html www/index.html
+
+      - name: Setup Capacitor Engine
+        run: |
+          echo '{"name":"elsayeh-store","private":true}' > package.json
+          npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0
+          npx cap init "El Sayeh Store" com.elsayeh.store --web-dir www
+          npx cap add android
+
+      - name: Grant Android Network & Camera Permissions
+        run: |
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/s/$/ android:usesCleartextTraffic="true"/' $MANIFEST_PATH
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" />' $MANIFEST_PATH
+
+      - name: Sync Capacitor Web Assets
+        run: |
+          npx cap copy android
+          npx cap update android
+
+      - name: Build APK with Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload Clean APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: El-Sayeh-Store-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk

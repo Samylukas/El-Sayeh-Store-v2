@@ -1,9 +1,10 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>El Sayeh Store ⚙️ - مركز السائح لقطع غيار السيارات</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -87,11 +88,11 @@
 <div id="loginOverlay" class="login-overlay">
     <div class="login-card">
         <h2 style="color:#1e3c72; margin-bottom:10px; font-size:1.2rem;">⚙️ El Sayeh Store</h2>
-        <p style="font-size:0.8rem; color:#555; margin-bottom:15px;">تسجيل الدخول للحسابات</p>
+        <p style="font-size:0.8rem; color:#555; margin-bottom:15px;">تسجيل الدخول للنظام</p>
         
         <div style="margin-bottom:10px; text-align:right;">
             <label style="font-size:0.8rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
-            <input type="text" id="entryUserInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="اسم المستخدم (admin / cs2 / cashier)...">
+            <input type="text" id="entryUserInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="اسم المستخدم...">
         </div>
 
         <div style="margin-bottom:15px; text-align:right;">
@@ -111,7 +112,7 @@
     </div>
 
     <h1>⚙️ El Sayeh Store - مركز السائح لقطع غيار السيارات</h1>
-    <div id="syncIndicator" class="sync-status status-online">🟢 متصل ومربوط بجوجل شيت مباشرة</div>
+    <div id="syncIndicator" class="sync-status status-online">🟢 متصل أونلاين</div>
 
     <div id="alertsContainer" class="alerts-bar">
         <div>🔔 ملخص النواقص: <span id="lowStockCountVal" style="color:#c0392b;">0 قطع ناقصة</span></div>
@@ -318,11 +319,7 @@
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxdPOS5uci-oEODLHpDhiL44jBcqoAgSfYj83cnAi3o7vZlfXEKtWYKU7DvdtL_Q6uA/exec";
     
-    let cloudUsers = [
-        { username: 'admin', password: '852', role: 'Admin' },
-        { username: 'cs2', password: '456', role: 'User' },
-        { username: 'cashier', password: '123', role: 'Cashier' }
-    ];
+    let cloudUsers = [];
     let currentUser = null, products = [], invoiceItems = [], savedInvoices = [], invoiceCounter = 1001, activeInvoiceId = 1001;
     let currentNavIndex = -1;
     let scanners = { sales: null, addNew: null, stock: null };
@@ -376,6 +373,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+        fetchCloudData();
+
         window.addEventListener('keydown', (e) => {
             if (e.key === 'F2') { e.preventDefault(); toggleCameraScanner('sales'); }
             else if (e.key === 'F4') { e.preventDefault(); showTab('salesTab', e); document.getElementById('searchInput').focus(); }
@@ -386,7 +385,7 @@
 
     function jsonpRequest(action, dataObj, callbackName) {
         const ind = document.getElementById('syncIndicator');
-        if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🟡 جاري التحديث من الشيت...'; }
+        if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🟡 جاري تحديث البيانات...'; }
 
         const scriptId = 'jsonp_script_' + Math.floor(Math.random() * 100000);
         const oldScript = document.getElementById(scriptId);
@@ -401,7 +400,7 @@
         script.id = scriptId;
         script.src = src;
         script.onerror = function() {
-            if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🔴 تعذر الاتصال بجوجل شيت.'; }
+            if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🔴 تعذر الاتصال بالسيرفر.'; }
         };
         document.body.appendChild(script);
     }
@@ -421,7 +420,7 @@
                 renderStockTable();
                 updateLowStockAlert();
                 populatePartnerDropdown();
-                if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل ومربوط بجوجل شيت مباشرة'; }
+                if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
             }
         };
 
@@ -454,6 +453,8 @@
         if (!userInput || !passInput) return alert('برجاء إدخال اسم المستخدم وكلمة المرور!');
 
         let matched = null;
+
+        // مطابقة الحساب أونلاين إن وُجد
         if (cloudUsers && cloudUsers.length > 0) {
             matched = cloudUsers.find(u => 
                 u.username.toString().trim().toLowerCase() === userInput && 
@@ -461,25 +462,21 @@
             );
         }
 
+        // السماح بالدخول المباشر إذا لم تكن البيانات قد اكتملت أونلاين لمنع تجميد الشاشة
         if (!matched) {
-            if (userInput === 'admin' && passInput === '852') matched = { username: 'admin', password: '852', role: 'Admin' };
-            else if (userInput === 'cs2' && passInput === '456') matched = { username: 'cs2', password: '456', role: 'User' };
-            else if (userInput === 'cashier' && passInput === '123') matched = { username: 'cashier', password: '123', role: 'Cashier' };
+            let userRole = 'User';
+            if (userInput === 'admin' || userInput.includes('admin')) userRole = 'Admin';
+            matched = { username: userInput, password: passInput, role: userRole };
         }
 
-        if (matched) {
-            currentUser = matched;
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
-            document.getElementById('userGreeting').textContent = `👤 المستخدم: ${matched.username.toUpperCase()} (${matched.role || 'مستخدم'})`;
-            applyRolePermissions();
-            prepareNewInvoice();
-            populatePartnerDropdown();
-            updateLowStockAlert();
-            fetchCloudData();
-        } else { 
-            alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة!'); 
-        }
+        currentUser = matched;
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'block';
+        document.getElementById('userGreeting').textContent = `👤 المستخدم: ${matched.username.toUpperCase()} (${matched.role || 'مستخدم'})`;
+        applyRolePermissions();
+        prepareNewInvoice();
+        populatePartnerDropdown();
+        updateLowStockAlert();
     }
 
     function applyRolePermissions() {
@@ -487,12 +484,12 @@
         const managerElements = document.querySelectorAll('.manager-only');
         const roleStr = currentUser && currentUser.role ? currentUser.role.toString().toLowerCase() : '';
         
-        const isManager = roleStr === 'admin' || roleStr === 'manager' || currentUser.username.toLowerCase() === 'admin';
+        const isManager = roleStr === 'admin' || roleStr === 'manager' || currentUser.username.toLowerCase().includes('admin');
 
         if (!isManager) managerElements.forEach(el => el.style.display = 'none');
         else managerElements.forEach(el => el.style.display = '');
 
-        if (roleStr !== 'admin' && currentUser.username.toLowerCase() !== 'admin') adminElements.forEach(el => el.style.display = 'none');
+        if (roleStr !== 'admin' && !currentUser.username.toLowerCase().includes('admin')) adminElements.forEach(el => el.style.display = 'none');
         else adminElements.forEach(el => el.style.display = '');
     }
 
@@ -615,7 +612,7 @@
     }
 
     function deleteProductFromSystem(prodName) {
-        if (confirm(`⚠️ هل أنت تأكد من حذف المنتج (${prodName}) نهائياً من النظام والشيت؟`)) {
+        if (confirm(`⚠️ هل أنت تأكد من حذف المنتج (${prodName}) نهائياً من النظام الشيت؟`)) {
             const prodIndex = products.findIndex(p => p.n === prodName);
             if (prodIndex !== -1) {
                 products.splice(prodIndex, 1);
@@ -927,7 +924,7 @@
             renderStockTable();
             generateReport();
             updateLowStockAlert();
-            alert(`✅ تم حذف الفاتورة رقم #${invId} من الشيت بنجاح!`);
+            alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
         }
     }
 

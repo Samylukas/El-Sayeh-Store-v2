@@ -15,7 +15,6 @@
         .app-container { width: 100%; max-width: 1050px; margin: 0 auto; background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: relative; min-height: 95vh; padding-bottom: 40px; }
         h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.3rem; }
         
-        /* انيميشن تكبير ودوران الترس */
         .spinning-gear {
             display: inline-block;
             font-size: 1.8rem;
@@ -71,8 +70,11 @@
         th { background: #1e3c72; color: white; white-space: nowrap; }
 
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
-        .login-card { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .login-card { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         
+        .pass-container { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+        .toggle-pass-btn { background: #e9ecef; border: 1px solid #ccc; padding: 9px; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+
         .totals-box { background: #1e3c72; color: #fff; padding: 12px; border-radius: 8px; margin-top: 15px; }
         .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; font-size: 0.75rem; text-align: center; }
         .total-item { background: rgba(255,255,255,0.1); padding: 6px 4px; border-radius: 6px; }
@@ -106,16 +108,30 @@
         
         <div style="margin-bottom:10px; text-align:right;">
             <label style="font-size:0.8rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
-            <input type="text" id="entryUserInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="اسم المستخدم...">
+            <!-- القائمة المنسدلة لأسماء المستخدمين -->
+            <select id="entryUserSelect" class="search-box" style="text-align:center; margin-top:4px;">
+                <option value="admin">admin</option>
+                <option value="cs2">cs2</option>
+                <option value="cashier">cashier</option>
+            </select>
         </div>
 
         <div style="margin-bottom:15px; text-align:right;">
             <label style="font-size:0.8rem; font-weight:bold; color:#1e3c72;">كلمة المرور:</label>
-            <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
+            <!-- زر إظهار وإخفاء كلمة المرور -->
+            <div class="pass-container">
+                <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-bottom:0;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
+                <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()">👁️</button>
+            </div>
         </div>
 
-        <button type="button" class="btn btn-blue" onclick="validateEntryPassword()">تسجيل الدخول 🚀</button>
-        <div class="footer-signature" style="margin-top:15px;">El Sayeh Store 2026</div>
+        <!-- زرارين: تسجيل الدخول والخروج من البرنامج -->
+        <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-blue" style="margin-top:0;" onclick="validateEntryPassword()">تسجيل الدخول</button>
+            <button type="button" class="btn btn-red" style="margin-top:0;" onclick="closeApp()">خروج من البرنامج</button>
+        </div>
+
+        <div class="footer-signature" style="margin-top:15px;">El Sayeh Store 2026 | D&P Samy Luks</div>
     </div>
 </div>
 
@@ -298,6 +314,7 @@
                 </thead>
                 <tbody id="savedInvoicesBody"></tbody>
             </table></div>
+            <div class="footer-signature" style="margin-top:10px;">D&P Samy Luks</div>
         </div>
     </div>
 
@@ -325,7 +342,7 @@
         </div>
     </div>
 
-    <div class="footer-signature">El Sayeh Store 2026 <span class="spinning-gear" style="font-size: 1rem;">⚙️</span></div>
+    <div class="footer-signature">El Sayeh Store 2026 | D&P Samy Luks <span class="spinning-gear" style="font-size: 1rem;">⚙️</span></div>
 </div>
 
 <div id="receiptPrintSection"></div>
@@ -340,6 +357,25 @@
     let activeScannerKey = null;
     let selectedProd = null;
     let selectedStockEditProduct = null;
+
+    function togglePasswordVisibility() {
+        const passInput = document.getElementById('entryPassInput');
+        if (passInput.type === "password") {
+            passInput.type = "text";
+        } else {
+            passInput.type = "password";
+        }
+    }
+
+    function closeApp() {
+        if (navigator.app && navigator.app.exitApp) {
+            navigator.app.exitApp();
+        } else if (window.close) {
+            window.close();
+        } else {
+            alert('إغلاق البرنامج غُير مدعوم من المتصفح مباشرة');
+        }
+    }
 
     function formatDateShort(dateInput) {
         if (!dateInput) return "-";
@@ -426,6 +462,7 @@
                 if (resData.users && resData.users.length > 0) {
                     cloudUsers = resData.users;
                     populateUsersDropdown();
+                    populateLoginUsersSelect();
                 }
                 if (resData.products) products = resData.products;
                 if (resData.invoices) savedInvoices = resData.invoices;
@@ -439,6 +476,15 @@
         };
 
         jsonpRequest("getData", null, "handleCloudInvoicesResponse");
+    }
+
+    function populateLoginUsersSelect() {
+        const select = document.getElementById('entryUserSelect');
+        if (!select || !cloudUsers || cloudUsers.length === 0) return;
+        select.innerHTML = '';
+        cloudUsers.forEach(u => {
+            select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username}</option>`;
+        });
     }
 
     function syncToCloud(actionType, dataObj) {
@@ -461,10 +507,10 @@
     }
 
     function validateEntryPassword() {
-        const userInput = document.getElementById('entryUserInput').value.trim().toLowerCase();
+        const userInput = document.getElementById('entryUserSelect').value.trim().toLowerCase();
         const passInput = document.getElementById('entryPassInput').value.trim();
 
-        if (!userInput || !passInput) return alert('برجاء إدخال اسم المستخدم وكلمة المرور!');
+        if (!userInput || !passInput) return alert('برجاء إدخال كلمة المرور!');
 
         let matched = null;
 
@@ -1104,7 +1150,7 @@
                 <h3 style="text-align:center; font-size:14px; margin:4px 0;">الإجمالي: ${inv.totalEGP.toFixed(2)} ج.م</h3>
             </div>
             <p style="font-size:10px; margin-top:8px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p>
-            <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store 2026</div>
+            <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store 2026 | D&P Samy Luks</div>
         `;
 
         const printSec = document.getElementById('receiptPrintSection');
@@ -1149,7 +1195,6 @@
     function logout() {
         currentUser = null;
         stopAllScanners();
-        document.getElementById('entryUserInput').value = '';
         document.getElementById('entryPassInput').value = '';
         document.getElementById('mainContainer').style.display = 'none';
         document.getElementById('loginOverlay').style.display = 'flex';

@@ -15,6 +15,20 @@
         .app-container { width: 100%; max-width: 1050px; margin: 0 auto; background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: relative; min-height: 95vh; padding-bottom: 40px; }
         h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.3rem; }
         
+        /* انيميشن تكبير ودوران الترس */
+        .spinning-gear {
+            display: inline-block;
+            font-size: 1.8rem;
+            vertical-align: middle;
+            margin: 0 4px;
+            animation: spinGear 6s linear infinite;
+        }
+
+        @keyframes spinGear {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .sync-status { text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; padding: 6px; border-radius: 6px; }
         .status-online { background: #d4edda; color: #155724; }
         .status-syncing { background: #fff3cd; color: #856404; }
@@ -87,7 +101,7 @@
 
 <div id="loginOverlay" class="login-overlay">
     <div class="login-card">
-        <h2 style="color:#1e3c72; margin-bottom:10px; font-size:1.2rem;">⚙️ El Sayeh Store</h2>
+        <h2 style="color:#1e3c72; margin-bottom:10px; font-size:1.2rem;"><span class="spinning-gear">⚙️</span> El Sayeh Store</h2>
         <p style="font-size:0.8rem; color:#555; margin-bottom:15px;">تسجيل الدخول للنظام</p>
         
         <div style="margin-bottom:10px; text-align:right;">
@@ -111,7 +125,7 @@
         <button class="btn btn-red" style="width:auto; margin:0; padding:4px 8px; font-size:0.75rem;" onclick="logout()">تسجيل الخروج 🚪</button>
     </div>
 
-    <h1>⚙️ El Sayeh Store - مركز السائح لقطع غيار السيارات</h1>
+    <h1><span class="spinning-gear">⚙️</span> El Sayeh Store - مركز السائح لقطع غيار السيارات</h1>
     <div id="syncIndicator" class="sync-status status-online">🟢 متصل أونلاين</div>
 
     <div id="alertsContainer" class="alerts-bar">
@@ -311,7 +325,7 @@
         </div>
     </div>
 
-    <div class="footer-signature">El Sayeh Store 2026 ⚙️</div>
+    <div class="footer-signature">El Sayeh Store 2026 <span class="spinning-gear" style="font-size: 1rem;">⚙️</span></div>
 </div>
 
 <div id="receiptPrintSection"></div>
@@ -454,7 +468,6 @@
 
         let matched = null;
 
-        // مطابقة الحساب أونلاين إن وُجد
         if (cloudUsers && cloudUsers.length > 0) {
             matched = cloudUsers.find(u => 
                 u.username.toString().trim().toLowerCase() === userInput && 
@@ -462,7 +475,6 @@
             );
         }
 
-        // السماح بالدخول المباشر إذا لم تكن البيانات قد اكتملت أونلاين لمنع تجميد الشاشة
         if (!matched) {
             let userRole = 'User';
             if (userInput === 'admin' || userInput.includes('admin')) userRole = 'Admin';
@@ -612,7 +624,7 @@
     }
 
     function deleteProductFromSystem(prodName) {
-        if (confirm(`⚠️ هل أنت تأكد من حذف المنتج (${prodName}) نهائياً من النظام الشيت؟`)) {
+        if (confirm(`⚠️ هل أنت تأكد من حذف المنتج (${prodName}) نهائياً من النظام والشيت؟`)) {
             const prodIndex = products.findIndex(p => p.n === prodName);
             if (prodIndex !== -1) {
                 products.splice(prodIndex, 1);
@@ -1033,7 +1045,7 @@
             </style></head>
             <body>
                 <div class="split-label-card">
-                    <div class="store-title">El Sayeh Store ⚙️</div>
+                    <div class="store-title">El Sayeh Store <span class="spinning-gear" style="font-size: 6px;">⚙️</span></div>
                     <div class="prod-title">${prod.n} ${prod.size ? '('+prod.size+')' : ''}</div>
                     <svg id="barcode-0"></svg>
                     <div class="prod-price">السعر: ${(prod.sp || 0).toFixed(2)} ج.م</div>
@@ -1056,7 +1068,7 @@
         let formattedDate = formatDateShort(inv.date);
 
         let receiptHTML = `
-            <div style="font-size:16px; font-weight:bold; margin-bottom:2px;">⚙️ El Sayeh Store</div>
+            <div style="font-size:16px; font-weight:bold; margin-bottom:2px;"><span class="spinning-gear" style="font-size: 14px;">⚙️</span> El Sayeh Store</div>
             <div style="font-size:12px; margin-bottom:6px;">مركز السائح لقطع غيار السيارات</div>
             <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:4px 0; margin-bottom:6px;">
                 <p style="font-size:11px; margin:2px 0;">رقم الفاتورة: <b>#${inv.id}</b></p>

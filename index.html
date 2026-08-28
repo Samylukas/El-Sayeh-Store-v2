@@ -108,7 +108,6 @@
         
         <div style="margin-bottom:10px; text-align:right;">
             <label style="font-size:0.8rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
-            <!-- القائمة المنسدلة لأسماء المستخدمين -->
             <select id="entryUserSelect" class="search-box" style="text-align:center; margin-top:4px;">
                 <option value="admin">admin</option>
                 <option value="cs2">cs2</option>
@@ -118,14 +117,12 @@
 
         <div style="margin-bottom:15px; text-align:right;">
             <label style="font-size:0.8rem; font-weight:bold; color:#1e3c72;">كلمة المرور:</label>
-            <!-- زر إظهار وإخفاء كلمة المرور -->
             <div class="pass-container">
                 <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-bottom:0;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
                 <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()">👁️</button>
             </div>
         </div>
 
-        <!-- زرارين: تسجيل الدخول والخروج من البرنامج -->
         <div style="display:flex; gap:8px;">
             <button type="button" class="btn btn-blue" style="margin-top:0;" onclick="validateEntryPassword()">تسجيل الدخول</button>
             <button type="button" class="btn btn-red" style="margin-top:0;" onclick="closeApp()">خروج من البرنامج</button>
@@ -360,20 +357,20 @@
 
     function togglePasswordVisibility() {
         const passInput = document.getElementById('entryPassInput');
-        if (passInput.type === "password") {
-            passInput.type = "text";
-        } else {
-            passInput.type = "password";
+        if (passInput) {
+            passInput.type = (passInput.type === "password") ? "text" : "password";
         }
     }
 
     function closeApp() {
-        if (navigator.app && navigator.app.exitApp) {
+        if (window.Capacitor && window.Capacitor.App) {
+            window.Capacitor.App.exitApp();
+        } else if (navigator.app && navigator.app.exitApp) {
             navigator.app.exitApp();
         } else if (window.close) {
             window.close();
         } else {
-            alert('إغلاق البرنامج غُير مدعوم من المتصفح مباشرة');
+            document.body.innerHTML = '<div style="text-align:center; padding:50px; font-weight:bold; font-size:1.2rem; color:#1e3c72;">تم إغلاق الجلسة بنجاح. يمكنك إغلاق النافذة الآن.</div>';
         }
     }
 
@@ -507,30 +504,45 @@
     }
 
     function validateEntryPassword() {
-        const userInput = document.getElementById('entryUserSelect').value.trim().toLowerCase();
-        const passInput = document.getElementById('entryPassInput').value.trim();
+        const userSelect = document.getElementById('entryUserSelect');
+        const passInput = document.getElementById('entryPassInput');
 
-        if (!userInput || !passInput) return alert('برجاء إدخال كلمة المرور!');
+        const userInput = userSelect ? userSelect.value.trim().toLowerCase() : 'admin';
+        const passVal = passInput ? passInput.value.trim() : '';
+
+        if (!passVal) {
+            return alert('برجاء إدخال كلمة المرور!');
+        }
+
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
 
         let matched = null;
 
         if (cloudUsers && cloudUsers.length > 0) {
             matched = cloudUsers.find(u => 
                 u.username.toString().trim().toLowerCase() === userInput && 
-                u.password.toString().trim() === passInput
+                u.password.toString().trim() === passVal
             );
         }
 
         if (!matched) {
             let userRole = 'User';
             if (userInput === 'admin' || userInput.includes('admin')) userRole = 'Admin';
-            matched = { username: userInput, password: passInput, role: userRole };
+            matched = { username: userInput, password: passVal, role: userRole };
         }
 
         currentUser = matched;
+
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainContainer').style.display = 'block';
-        document.getElementById('userGreeting').textContent = `👤 المستخدم: ${matched.username.toUpperCase()} (${matched.role || 'مستخدم'})`;
+        
+        const greeting = document.getElementById('userGreeting');
+        if (greeting) {
+            greeting.textContent = `👤 المستخدم: ${matched.username.toUpperCase()} (${matched.role || 'مستخدم'})`;
+        }
+
         applyRolePermissions();
         prepareNewInvoice();
         populatePartnerDropdown();

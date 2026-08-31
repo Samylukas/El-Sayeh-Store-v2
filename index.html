@@ -11,9 +11,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
-        html, body { width: 100%; overflow-x: hidden; background-color: #f0f2f5; padding: 4px; color: #333; direction: rtl; }
+        html, body { width: 100%; overflow-x: hidden; background-color: #f0f2f5; padding: 4px; color: #000; direction: rtl; }
         
-        /* جعل الحاوية تتكيف 100% مع الموبايل بدون سكرول خارجي */
         .app-container { width: 100%; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; min-height: 98vh; padding-bottom: 30px; overflow-x: hidden; }
         h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.1rem; }
         
@@ -66,11 +65,11 @@
         .nav-controls { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
         .nav-controls .btn { width: auto; font-size: 0.75rem; padding: 4px 8px; margin-top: 0; }
 
-        /* --- جعل الجداول ديناميكية بالكامل وتتأقلم مع الشاشة --- */
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #ccc; }
-        table { width: 100%; border-collapse: collapse; background: #fff; table-layout: auto; }
-        th, td { padding: 6px 4px; border: 1px solid #ddd; text-align: center; font-size: 0.72rem; word-break: break-all; vertical-align: middle; }
-        th { background: #1e3c72; color: white; white-space: nowrap; font-size: 0.75rem; }
+        /* الجداول مجهزة للطباعة أبيض وأسود مع خط واضح ومحاذاة مضبوطة */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #000; }
+        table { width: 100%; border-collapse: collapse; background: #fff; table-layout: auto; direction: rtl; }
+        th, td { padding: 8px 6px; border: 1px solid #000; text-align: center; font-size: 0.85rem; word-break: break-word; vertical-align: middle; color: #000 !important; font-weight: bold; line-height: 1.4; }
+        th { background: #f0f0f0; color: #000 !important; white-space: nowrap; font-size: 0.85rem; }
 
         .action-btn-group { display: flex; flex-direction: row; flex-wrap: wrap; gap: 2px; justify-content: center; min-width: 110px; }
         .action-btn-group .btn { width: auto; font-size: 0.65rem; padding: 2px 4px; margin: 0; line-height: 1.2; }
@@ -81,12 +80,13 @@
         .pass-container { display: flex; gap: 4px; align-items: center; margin-top: 4px; }
         .toggle-pass-btn { background: #e9ecef; border: 1px solid #ccc; padding: 7px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
 
-        .totals-box { background: #1e3c72; color: #fff; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 4px; font-size: 0.7rem; text-align: center; }
-        .total-item { background: rgba(255,255,255,0.1); padding: 4px 2px; border-radius: 4px; }
-        .total-item span { display: block; font-weight: bold; font-size: 0.8rem; color: #f1c40f; margin-top: 2px; }
+        /* الصندوق العلوي مخصص للطباعة أبيض وأسود بدون ألوان ملونة باهتة */
+        .totals-box { background: #fff; color: #000; padding: 10px; border-radius: 8px; margin-top: 10px; border: 2px solid #000; }
+        .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; font-size: 0.8rem; text-align: center; }
+        .total-item { background: #f9f9f9; padding: 6px 4px; border-radius: 4px; border: 1px solid #000; color: #000; }
+        .total-item span { display: block; font-weight: bold; font-size: 0.95rem; color: #000 !important; margin-top: 2px; }
 
-        .footer-signature { text-align: center; margin-top: 15px; padding-top: 8px; border-top: 1px solid #e0e0e0; font-size: 0.7rem; color: #7f8c8d; font-weight: bold; }
+        .footer-signature { text-align: center; margin-top: 15px; padding-top: 8px; border-top: 1px solid #000; font-size: 0.75rem; color: #000; font-weight: bold; }
 
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
@@ -97,7 +97,7 @@
             #receiptPrintSection { position: absolute; left: 0; top: 0; width: 80mm; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; direction: rtl; color: #000; }
         }
 
-        .pdf-export-mode table { min-width: 100% !important; font-size: 9px !important; }
+        .pdf-export-mode table { min-width: 100% !important; font-size: 10px !important; }
         .pdf-export-mode .no-pdf { display: none !important; }
     </style>
 </head>
@@ -150,7 +150,7 @@
             <label>اختر العميل:</label>
             <select id="payCreditCustomerSelect" class="search-box" style="margin-top:4px;" onchange="updateSelectedCustomerDueLabel()"></select>
         </div>
-        <div style="font-size:0.8rem; font-weight:bold; color:#e74c3c; margin-bottom:8px;" id="selectedCustDueVal">
+        <div style="font-size:0.8rem; font-weight:bold; color:#000; margin-bottom:8px;" id="selectedCustDueVal">
             المتبقي عليه: 0.00 ج.م
         </div>
         <div class="field-box" style="margin-bottom:10px;">
@@ -277,15 +277,15 @@
         <div id="productCard" class="card" style="display:none; margin-top: 6px;">
             <h3 id="prodName" style="color: #1e3c72; margin-bottom: 6px; font-size: 0.95rem;"></h3>
             <div class="info-row">
-                <div>المخزون: <span id="stockQty" style="color:#27ae60;">0</span> قطعة</div>
-                <div>التجاري: <span id="commPrice" style="color:#2c3e50;">0</span> ج.م</div>
-                <div>البيع: <span id="sellPriceVal" style="color:#e67e22;">0</span> ج.م</div>
+                <div>المخزون: <span id="stockQty" style="color:#000;">0</span> قطعة</div>
+                <div>التجاري: <span id="commPrice" style="color:#000;">0</span> ج.م</div>
+                <div>البيع: <span id="sellPriceVal" style="color:#000;">0</span> ج.م</div>
             </div>
 
             <div class="form-grid" style="margin-top:6px;">
                 <div class="field-box"><label>الكمية المباعة:</label><input type="number" id="sellQty" value="1" min="1" oninput="calculateItemTotal()"></div>
                 <div class="field-box"><label>سعر البيع الفعلي (ج.م):</label><input type="number" id="actualSellPrice" value="0" oninput="calculateItemTotal()"></div>
-                <div class="field-box"><label>الإجمالي (ج.م):</label><input type="number" id="itemTotalCalc" value="0" readonly style="background:#e9ecef; font-weight:bold; color:#1e3c72;"></div>
+                <div class="field-box"><label>الإجمالي (ج.م):</label><input type="number" id="itemTotalCalc" value="0" readonly style="background:#e9ecef; font-weight:bold; color:#000;"></div>
             </div>
 
             <button class="btn" onclick="addToInvoice()">إضافة للفاتورة 🛒</button>
@@ -301,9 +301,9 @@
 
         <div class="totals-box" style="margin-top:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; flex-wrap:wrap; gap:6px;">
-                <div>قبل الخصم: <span id="subTotalEGP" style="color:#fff;">0.00</span></div>
-                <div>الخصم: <span id="discountValEGP" style="color:#e74c3c;">0.00</span></div>
-                <div>الصافي: <span id="liveTotalEGP" style="color:#f1c40f; font-weight:bold; font-size:1.1rem;">0.00 ج.م</span></div>
+                <div>قبل الخصم: <span id="subTotalEGP">0.00</span></div>
+                <div>الخصم: <span id="discountValEGP">0.00</span></div>
+                <div>الصافي: <span id="liveTotalEGP" style="font-weight:bold; font-size:1.1rem;">0.00 ج.م</span></div>
             </div>
         </div>
 
@@ -313,7 +313,7 @@
         </div>
     </div>
 
-    <!-- 2. تفاصيل المخزون الديناميكي المنظم -->
+    <!-- 2. تفاصيل المخزون -->
     <div id="stockTab" class="tab-content manager-only">
         <div class="section-title">📦 تفاصيل المخزون والباركود والشركاء</div>
         <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة أو الباركود..." oninput="filterStockTable(this.value)">
@@ -325,7 +325,7 @@
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th>إجراءات وخيارات</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th>خيارات وإجراءات</th></tr>
             </thead>
             <tbody id="stockTableBody"></tbody>
         </table></div>
@@ -365,19 +365,22 @@
         </div>
     </div>
 
-    <!-- 4. آجل العملاء وتدقيق السداد -->
+    <!-- 4. آجل العملاء مع زر مسح التواريخ -->
     <div id="creditTab" class="tab-content admin-only">
         <div class="section-title">📝 دفتر البيع الآجل وتحصيل ديون العملاء</div>
         <div class="card">
             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
-                <button class="btn btn-purple" style="width:auto; margin:0; font-size:0.75rem;" onclick="openPayCreditModal()">تسجيل سداد / تحصيل 💵</button>
+                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="ابحث باسم العميل..." oninput="renderCreditReport()"></div>
+                <div>من: <input type="date" id="creditFromDate" onchange="renderCreditReport()" style="font-size:0.75rem;"></div>
+                <div>إلى: <input type="date" id="creditToDate" onchange="renderCreditReport()" style="font-size:0.75rem;"></div>
+                <button class="btn btn-orange" style="width:auto; margin:0; font-size:0.75rem; padding:4px 8px;" onclick="clearCreditDates()">مسح التواريخ 🧹</button>
+                <button class="btn btn-purple" style="width:auto; margin:0; font-size:0.75rem; padding:4px 8px;" onclick="openPayCreditModal()">تسجيل سداد / تحصيل 💵</button>
             </div>
         </div>
 
-        <div id="creditSummaryBox" class="totals-box" style="background:#2c3e50; margin-bottom:8px;">
+        <div id="creditSummaryBox" class="totals-box" style="margin-bottom:8px;">
             <div class="totals-grid">
-                <div class="total-item">إجمالي الديون <span id="creditTotalAmountVal" style="color:#e74c3c;">0.00 ج.م</span></div>
+                <div class="total-item">إجمالي الديون <span id="creditTotalAmountVal">0.00 ج.م</span></div>
             </div>
         </div>
 
@@ -406,7 +409,7 @@
         </table></div>
     </div>
 
-    <!-- 6. التقارير وتفصيل المبيعات -->
+    <!-- 6. التقارير وتفصيل المبيعات مع زر مسح التواريخ -->
     <div id="reportsTab" class="tab-content admin-only">
         <div class="section-title">📊 تقارير المبيعات وتفصيل أرباح الشركاء والفرع الرئيسي</div>
         <div class="card">
@@ -419,18 +422,19 @@
                         <option value="MAIN">الفرع الرئيسي فقط</option>
                     </select>
                 </div>
-                <button class="btn btn-blue" style="width:auto; margin:0; font-size:0.75rem;" onclick="generateReport()">عرض 📈</button>
-                <button class="btn btn-purple" style="width:auto; margin:0; font-size:0.75rem;" onclick="exportReportPDF()">تحميل PDF 📄</button>
+                <button class="btn btn-blue" style="width:auto; margin:0; font-size:0.75rem; padding:4px 8px;" onclick="generateReport()">عرض 📈</button>
+                <button class="btn btn-orange" style="width:auto; margin:0; font-size:0.75rem; padding:4px 8px;" onclick="clearReportDates()">مسح التواريخ 🧹</button>
+                <button class="btn btn-purple" style="width:auto; margin:0; font-size:0.75rem; padding:4px 8px;" onclick="exportReportPDF()">تحميل PDF 📄</button>
             </div>
         </div>
 
         <div id="pdfReportArea">
-            <div id="profitBox" class="totals-box" style="background:#1e3c72; margin-bottom:10px;">
+            <div id="profitBox" class="totals-box" style="margin-bottom:10px;">
                 <h3 style="text-align:center; margin-bottom:6px; font-size:0.9rem;" id="reportSummaryTitle">💵 ملخص تقرير مبيعات وأرباح الفترة - El Sayeh Store</h3>
                 <div class="totals-grid">
                     <div class="total-item">المبيعات <span id="repTotalSell">0.00 ج.م</span></div>
                     <div class="total-item">التكلفة التجاري <span id="repTotalComm">0.00 ج.م</span></div>
-                    <div class="total-item" style="background:#27ae60; grid-column: span 2;">صافي الأرباح <span id="repNetProfit" style="font-size:0.95rem; color:#fff;">0.00 ج.م</span></div>
+                    <div class="total-item" style="grid-column: span 2;">صافي الأرباح <span id="repNetProfit" style="font-size:0.95rem;">0.00 ج.م</span></div>
                 </div>
             </div>
 
@@ -525,6 +529,18 @@
         } else {
             alert('❌ كود التفعيل غير صحيح!');
         }
+    }
+
+    function clearReportDates() {
+        document.getElementById('fromDate').value = '';
+        document.getElementById('toDate').value = '';
+        generateReport();
+    }
+
+    function clearCreditDates() {
+        document.getElementById('creditFromDate').value = '';
+        document.getElementById('creditToDate').value = '';
+        renderCreditReport();
     }
 
     function openSupplierModal(name = '', phone1 = '', phone2 = '', address = '', notes = '') {
@@ -692,6 +708,22 @@
         let hours = String(d.getHours()).padStart(2, '0');
         let minutes = String(d.getMinutes()).padStart(2, '0');
         return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+
+    // تحويل صيغة التاريخ المكتوب بدقة للمقارنة بتواريخ الفلترة
+    function extractDateYYYYMMDD(dateStr) {
+        if (!dateStr) return "";
+        try {
+            if (dateStr.includes('T')) return dateStr.slice(0, 10);
+            let parts = dateStr.split(' ')[0].split('/');
+            if (parts.length === 3) {
+                let day = parts[0].padStart(2, '0');
+                let month = parts[1].padStart(2, '0');
+                let year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+        } catch (e) {}
+        return dateStr.slice(0, 10);
     }
 
     function parseFormattedDateToISO(dateStr) {
@@ -1061,7 +1093,6 @@
         updateLowStockAlert();
     }
 
-    // تنسيق جدول المخزون المتكيف ديناميكياً بدون سكرول خارجي
     function renderStockTableCustom(list) {
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {
@@ -1074,13 +1105,13 @@
                 <td>${i.size || '-'}</td>
                 <td>${i.purpose || '-'}</td>
                 <td>${(i.p || 0).toFixed(2)}</td>
-                <td style="color:#27ae60; font-weight:bold;">${(i.sp || 0).toFixed(2)}</td>
-                <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#27ae60'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
-                <td style="color:#8e44ad; font-weight:bold;">${i.p1 || '-'}</td>
-                <td style="color:#8e44ad; font-weight:bold;">${i.p2 || '-'}</td>
-                <td style="font-family:monospace; font-weight:bold; color:#1e3c72; font-size:0.68rem;">${i.barcode || '-'}</td>
+                <td style="font-weight:bold;">${(i.sp || 0).toFixed(2)}</td>
+                <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#000'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
+                <td style="font-weight:bold;">${i.p1 || '-'}</td>
+                <td style="font-weight:bold;">${i.p2 || '-'}</td>
+                <td style="font-family:monospace; font-weight:bold; font-size:0.68rem;">${i.barcode || '-'}</td>
                 <td style="font-size:0.68rem;">${formatDateShort(i.expiry)}</td>
-                <td style="color:#16a085; font-weight:bold;">${i.supplier || 'غير محدد'}</td>
+                <td style="font-weight:bold;">${i.supplier || 'غير محدد'}</td>
                 <td>
                     <div class="action-btn-group">
                         <button class="btn btn-blue" onclick="editProductDetails('${i.n}')">✏️ تعديل</button>
@@ -1228,7 +1259,7 @@
             tbody.innerHTML = invoiceItems.map((item, index) => {
                 subTotalEGP += item.sellTotal;
                 let pStr = [item.p1, item.p2].filter(x => x && x.trim() !== "").join(', ');
-                return `<tr><td>${index + 1}</td><td style="font-weight:bold;">${item.name}</td><td>${pStr || 'الفرع الرئيسي'}</td><td>${item.qty}</td><td>${item.commUnitPrice.toFixed(2)}</td><td>${item.sellUnitPrice.toFixed(2)}</td><td style="color:#27ae60; font-weight:bold;">${item.sellTotal.toFixed(2)}</td><td>${item.seller}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem; margin:0;" onclick="removeInvoiceItem(${index})">حذف</button></td></tr>`;
+                return `<tr><td>${index + 1}</td><td style="font-weight:bold;">${item.name}</td><td>${pStr || 'الفرع الرئيسي'}</td><td>${item.qty}</td><td>${item.commUnitPrice.toFixed(2)}</td><td>${item.sellUnitPrice.toFixed(2)}</td><td style="font-weight:bold;">${item.sellTotal.toFixed(2)}</td><td>${item.seller}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem; margin:0;" onclick="removeInvoiceItem(${index})">حذف</button></td></tr>`;
             }).join('');
         }
 
@@ -1236,8 +1267,8 @@
         const discValue = (subTotalEGP * discPercent) / 100;
         const finalNetEGP = subTotalEGP - discValue;
 
-        document.getElementById('subTotalEGP').textContent = subTotalEGP.toFixed(2) + ' ج.م';
-        document.getElementById('discountValEGP').textContent = discValue.toFixed(2) + ' ج.م';
+        document.getElementById('subTotalEGP').textContent = subTotalEGP.toFixed(2);
+        document.getElementById('discountValEGP').textContent = discValue.toFixed(2);
         document.getElementById('liveTotalEGP').textContent = finalNetEGP.toFixed(2) + ' ج.م';
     }
 
@@ -1314,8 +1345,12 @@
         if (invId) printSingleReceipt(invId);
     }
 
+    // تصحيح مقارنة التواريخ بدقة 100%
     function renderCreditReport() {
         const queryName = document.getElementById('creditSearchCustomer').value.trim().toLowerCase();
+        const fromD = document.getElementById('creditFromDate').value;
+        const toD = document.getElementById('creditToDate').value;
+
         const tbody = document.getElementById('creditTableBody');
         let creditInvoices = savedInvoices.filter(i => i.paymentType === 'credit');
 
@@ -1324,6 +1359,12 @@
 
         creditInvoices.forEach(inv => {
             if (queryName && (!inv.customerName || !inv.customerName.toLowerCase().includes(queryName))) return;
+            
+            if (inv.date) {
+                const invD = extractDateYYYYMMDD(inv.date);
+                if (fromD && invD < fromD) return;
+                if (toD && invD > toD) return;
+            }
 
             let paid = inv.paidAmount || 0;
             let due = inv.totalEGP - paid;
@@ -1333,19 +1374,19 @@
             rows.push(`
                 <tr>
                     <td>${rows.length + 1}</td>
-                    <td style="font-weight:bold; color:#e74c3c;">${inv.customerName || 'غير محدد'}</td>
+                    <td style="font-weight:bold;">${inv.customerName || 'غير محدد'}</td>
                     <td style="font-weight:bold;">#${inv.id}</td>
                     <td>${formatDateShort(inv.date)}</td>
                     <td style="text-align:right; font-size:0.72rem;">${inv.itemsText || '-'}</td>
                     <td style="font-weight:bold;">${inv.totalEGP.toFixed(2)} ج.م</td>
-                    <td style="color:#27ae60;">${paid.toFixed(2)} ج.م</td>
-                    <td style="color:#e74c3c; font-weight:bold;">${due.toFixed(2)} ج.م</td>
+                    <td>${paid.toFixed(2)} ج.م</td>
+                    <td style="font-weight:bold;">${due.toFixed(2)} ج.م</td>
                     <td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
                 </tr>
             `);
         });
 
-        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="9">لا توجد ديون معروضة مطابقة للبحث</td></tr>';
+        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="9">لا توجد ديون معروضة مطابقة للبحث/الفترة</td></tr>';
         else tbody.innerHTML = rows.join('');
 
         document.getElementById('creditTotalAmountVal').textContent = totalCredit.toFixed(2) + ' ج.م';
@@ -1387,14 +1428,14 @@
             rows.push(`
                 <tr>
                     <td>${index++}</td>
-                    <td style="font-weight:bold; color:#16a085;">${suppName}</td>
+                    <td style="font-weight:bold;">${suppName}</td>
                     <td>${data.phone1}</td>
                     <td>${data.phone2}</td>
                     <td>${data.address}</td>
                     <td style="font-size:0.72rem;">${data.notes}</td>
                     <td style="text-align:right; font-size:0.72rem;">${data.productsList.length > 0 ? data.productsList.join(', ') : 'لا يوجد أصناف تابعة'}</td>
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
-                    <td style="color:#27ae60; font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
+                    <td style="font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
                     <td>
                         <button class="btn btn-blue" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
                     </td>
@@ -1457,6 +1498,7 @@
         }
     }
 
+    // تصحيح تصفية التواريخ بدقة متناهية بالتقارير
     function generateReport() {
         const fromD = document.getElementById('fromDate').value;
         const toD = document.getElementById('toDate').value;
@@ -1468,7 +1510,7 @@
 
         savedInvoices.forEach((inv) => {
             if (inv.date) {
-                const invD = inv.date.slice(0, 10);
+                const invD = extractDateYYYYMMDD(inv.date);
                 if (fromD && invD < fromD) return;
                 if (toD && invD > toD) return;
             }
@@ -1500,18 +1542,18 @@
                 totalComm += invComm;
                 totalNetProfit += invProfit;
 
-                let payTypeTag = inv.paymentType === 'credit' ? `<br><span style="color:#e74c3c;">آجل: ${inv.customerName}</span>` : '<br><span style="color:#27ae60;">نقدي</span>';
+                let payTypeTag = inv.paymentType === 'credit' ? `<br><span>آجل: ${inv.customerName}</span>` : '<br><span>نقدي</span>';
 
                 reportRows.push(`
                     <tr>
                         <td>${reportRows.length + 1}</td>
                         <td style="font-weight:bold;">#${inv.id}</td>
                         <td style="font-weight:bold;">${payTypeTag}</td>
-                        <td style="white-space:nowrap; font-weight:bold; color:#1e3c72; font-size:0.72rem;">${formatDateShort(inv.date)}</td>
-                        <td style="text-align:right; font-size:0.72rem; line-height:1.3;">${itemsTextList.join('<br>')}</td>
+                        <td style="white-space:nowrap; font-weight:bold; font-size:0.75rem;">${formatDateShort(inv.date)}</td>
+                        <td style="text-align:right; font-size:0.75rem; line-height:1.3;">${itemsTextList.join('<br>')}</td>
                         <td>${invComm.toFixed(2)} ج.م</td>
-                        <td style="color:#27ae60; font-weight:bold;">${invSell.toFixed(2)} ج.م</td>
-                        <td style="color:#8e44ad; font-weight:bold;">${invProfit.toFixed(2)} ج.م</td>
+                        <td style="font-weight:bold;">${invSell.toFixed(2)} ج.م</td>
+                        <td style="font-weight:bold;">${invProfit.toFixed(2)} ج.م</td>
                         <td class="no-pdf">
                             <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="printSingleReceipt(${inv.id})">إيصال 🖨️</button>
                             <button class="btn btn-orange" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="editSingleInvoice(${inv.id})">تعديل ✏️</button>

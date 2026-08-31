@@ -137,6 +137,28 @@
     </div>
 </div>
 
+<!-- نافذة تحصيل الديون المحمية باختيار العميل -->
+<div id="payCreditModal" class="login-overlay" style="display:none; z-index:999999;">
+    <div class="login-card" style="max-width:380px; text-align:right;">
+        <h3 style="color:#1e3c72; margin-bottom:12px; text-align:center;">💵 تسجيل سداد / تحصيل من عميل</h3>
+        <div class="field-box" style="margin-bottom:8px;">
+            <label>اختر العميل:</label>
+            <select id="payCreditCustomerSelect" class="search-box" style="margin-top:4px;" onchange="updateSelectedCustomerDueLabel()"></select>
+        </div>
+        <div style="font-size:0.85rem; font-weight:bold; color:#e74c3c; margin-bottom:10px;" id="selectedCustDueVal">
+            المتبقي عليه: 0.00 ج.م
+        </div>
+        <div class="field-box" style="margin-bottom:12px;">
+            <label>المبلغ المسدد (ج.م):</label>
+            <input type="number" id="payCreditAmountInput" placeholder="أدخل المبلغ...">
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-purple" style="margin-top:0;" onclick="submitCreditPayment()">تأكيد التحصيل 💾</button>
+            <button class="btn btn-red" style="margin-top:0;" onclick="closePayCreditModal()">إلغاء ❌</button>
+        </div>
+    </div>
+</div>
+
 <div id="supplierModal" class="login-overlay" style="display:none; z-index:999999;">
     <div class="login-card" style="max-width:420px; text-align:right;">
         <h3 style="color:#1e3c72; margin-bottom:12px; text-align:center;">🚚 إضافة / تعديل بيانات المورد</h3>
@@ -261,7 +283,7 @@
                 <div class="field-box"><label>الإجمالي (ج.م):</label><input type="number" id="itemTotalCalc" value="0" readonly style="background:#e9ecef; font-weight:bold; color:#1e3c72;"></div>
             </div>
 
-            <button class="btn" onclick="addToInvoice()">خصم من المخزون وإضافة للفاتورة 🛒</button>
+            <button class="btn" onclick="addToInvoice()">إضافة للفاتورة 🛒</button>
         </div>
 
         <div class="section-title" style="margin-top: 20px;">📄 أصناف الفاتورة الحالية</div>
@@ -344,7 +366,7 @@
         <div class="card">
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
-                <button class="btn btn-purple" style="width:auto; margin:0;" onclick="promptCustomerPayment()">تسجيل سداد / تحصيل من عميل 💵</button>
+                <button class="btn btn-purple" style="width:auto; margin:0;" onclick="openPayCreditModal()">تسجيل سداد / تحصيل من عميل 💵</button>
             </div>
         </div>
 
@@ -534,16 +556,62 @@
         alert(`✅ تم حفظ بيانات المورد (${name}) بنجاح!`);
     }
 
-    function promptCustomerPayment() {
-        const custName = prompt("أدخل اسم العميل المسدد للدفعة:");
-        if (!custName) return;
+    // فتح نافذة تحصيل الديون وحصر العملاء الآجلين المسجلين فقط
+    function openPayCreditModal() {
+        const select = document.getElementById('payCreditCustomerSelect');
+        select.innerHTML = '';
 
-        const amount = parseFloat(prompt(`أدخل المبلغ المسدد من العميل (${custName}):`));
-        if (!amount || amount <= 0) return alert("المبلغ غير صحيح!");
+        let creditCustomersMap = new Map();
+        savedInvoices.forEach(inv => {
+            if (inv.paymentType === 'credit' && inv.customerName) {
+                let paid = inv.paidAmount || 0;
+                let due = inv.totalEGP - paid;
+                if (due > 0) {
+                    let currentDue = creditCustomersMap.get(inv.customerName) || 0;
+                    creditCustomersMap.set(inv.customerName, currentDue + due);
+                }
+            }
+        });
+
+        if (creditCustomersMap.size === 0) {
+            return alert('⚠️ لا يوجد عملاء عليهم مديونيات آجلة مسجلة بالنظام حالياً!');
+        }
+
+        creditCustomersMap.forEach((dueVal, custName) => {
+            select.innerHTML += `<option value="${custName}" data-due="${dueVal}">${custName}</option>`;
+        });
+
+        updateSelectedCustomerDueLabel();
+        document.getElementById('payCreditAmountInput').value = '';
+        document.getElementById('payCreditModal').style.display = 'flex';
+    }
+
+    function closePayCreditModal() {
+        document.getElementById('payCreditModal').style.display = 'none';
+    }
+
+    function updateSelectedCustomerDueLabel() {
+        const select = document.getElementById('payCreditCustomerSelect');
+        const selectedOpt = select.options[select.selectedIndex];
+        if (selectedOpt) {
+            const due = parseFloat(selectedOpt.getAttribute('data-due')) || 0;
+            document.getElementById('selectedCustDueVal').textContent = `المتبقي عليه: ${due.toFixed(2)} ج.م`;
+        }
+    }
+
+    function submitCreditPayment() {
+        const select = document.getElementById('payCreditCustomerSelect');
+        const custName = select.value;
+        const selectedOpt = select.options[select.selectedIndex];
+        const maxDue = parseFloat(selectedOpt.getAttribute('data-due')) || 0;
+
+        const amount = parseFloat(document.getElementById('payCreditAmountInput').value) || 0;
+
+        if (amount <= 0) return alert('⚠️ أدخل مبلغ تحصيل صحيح!');
+        if (amount > maxDue) return alert(`⚠️ المبلغ المدخل (${amount} ج.م) أكبر من إجمالي مديونية العميل (${maxDue.toFixed(2)} ج.م)!`);
 
         syncToCloud("payCredit", { customerName: custName, amount: amount });
 
-        // تعديل محلي فوري
         let rem = amount;
         savedInvoices.forEach(inv => {
             if (inv.paymentType === 'credit' && inv.customerName && inv.customerName.toLowerCase() === custName.toLowerCase() && rem > 0) {
@@ -557,8 +625,9 @@
             }
         });
 
+        closePayCreditModal();
         renderCreditReport();
-        alert(`✅ تم تسجيل سداد مبلغ (${amount} ج.م) للعميل (${custName}) بنجاح!`);
+        alert(`✅ تم تسجيل تحصيل مبلغ (${amount.toFixed(2)} ج.م) من العميل (${custName}) بنجاح!`);
     }
 
     function toggleCustomerNameField() {
@@ -987,7 +1056,7 @@
         updateLowStockAlert();
     }
 
-    // مطابقة ترتيب شيت جوجل: اسم القطعة -> المقاس -> الغرض -> السعر التجاري -> سعر البيع -> الكمية المتاحة -> شريك 1 -> شريك 2 -> الباركود -> تاريخ الصلاحية -> المورد
+    // تصحيح الترتيب المطابق تماماً لصورة جدول جوجل شيت الأصلي
     function renderStockTableCustom(list) {
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {
@@ -1131,9 +1200,6 @@
         const itemTotal = qty * actualPrice;
         const commTotal = (selectedProd.p || 0) * qty;
 
-        selectedProd.q -= qty;
-        syncToCloud("updateSingleProduct", selectedProd);
-
         invoiceItems.push({
             name: selectedProd.n, p1: selectedProd.p1 || '', p2: selectedProd.p2 || '',
             qty: qty, commUnitPrice: selectedProd.p || 0, sellUnitPrice: actualPrice,
@@ -1142,7 +1208,6 @@
         });
 
         renderInvoice();
-        updateLowStockAlert();
         document.getElementById('productCard').style.display = 'none';
         document.getElementById('searchInput').value = '';
     }
@@ -1170,14 +1235,8 @@
     }
 
     function removeInvoiceItem(index) {
-        const item = invoiceItems[index];
-        if (item) {
-            const pObj = products.find(p => p.n === item.name);
-            if (pObj) { pObj.q += item.qty; syncToCloud("updateSingleProduct", pObj); }
-        }
         invoiceItems.splice(index, 1);
         renderInvoice();
-        updateLowStockAlert();
     }
 
     function saveInvoice() {
@@ -1188,6 +1247,16 @@
 
         if (pType === 'credit' && !custName) {
             return alert('⚠️ عند اختيار الدفع الآجل، يجب كتابة اسم العميل!');
+        }
+
+        // الخصم الفعلي للمخزون يحدث فقط عند الحفظ النهائي
+        for (let item of invoiceItems) {
+            const pObj = products.find(p => p.n === item.name);
+            if (pObj) {
+                if (item.qty > pObj.q) return alert(`⚠️ الكمية غير متوفرة لصنف (${item.name})!`);
+                pObj.q -= item.qty;
+                syncToCloud("updateSingleProduct", pObj);
+            }
         }
 
         let rawDate = document.getElementById('invoiceDate').value;
@@ -1228,6 +1297,7 @@
 
         alert(`✅ تم حفظ الفاتورة رقم #${savedInv.id} [${pType === 'credit' ? 'آجل للعميل: ' + custName : 'نقدي'}] بنجاح!`);
         updateCustomersDatalist();
+        updateLowStockAlert();
         prepareNewInvoice();
         generateReport();
         return savedInv.id;
@@ -1251,7 +1321,7 @@
 
             let paid = inv.paidAmount || 0;
             let due = inv.totalEGP - paid;
-            if (due <= 0) return; // تم السداد بالكامل
+            if (due <= 0) return;
 
             totalCredit += due;
             rows.push(`
@@ -1374,6 +1444,7 @@
             savedInvoices.splice(invIndex, 1);
             syncToCloud("deleteInvoice", { id: invId });
             renderStockTable();
+            renderCreditReport();
             generateReport();
             updateLowStockAlert();
             alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
@@ -1603,14 +1674,6 @@
         document.getElementById('searchResults').style.display = 'none';
         document.getElementById('productCard').style.display = 'none';
         selectedProd = null;
-        
-        if (invoiceItems.length > 0) {
-            invoiceItems.forEach(item => {
-                const pObj = products.find(p => p.n === item.name);
-                if (pObj) { pObj.q += item.qty; syncToCloud("updateSingleProduct", pObj); }
-            });
-            renderStockTable();
-        }
         invoiceItems = [];
         renderInvoice();
     }

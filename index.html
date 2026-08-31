@@ -298,7 +298,7 @@
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>الكمية</th><th>التكلفة التجاري</th><th>سعر البيع</th><th>المورد</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th style="width:280px;">إجراءات وخيارات</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة التجاري</th><th>سعر البيع</th><th>الكمية المتاحة</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th style="width:280px;">إجراءات وخيارات</th></tr>
             </thead>
             <tbody id="stockTableBody"></tbody>
         </table></div>
@@ -310,7 +310,6 @@
         <div class="card" style="background:#eef7fe;">
             <div class="form-grid">
                 <div class="field-box"><label>اسم القطعة:</label><input type="text" id="newProdName" placeholder="اسم القطعة..."></div>
-                <div class="field-box"><label>اسم المورد:</label><input type="text" id="newProdSupplier" list="suppliersList" autocomplete="off" placeholder="اسم المورد..."></div>
                 <div class="field-box"><label>المقاس:</label><input type="text" id="newProdSize" placeholder="المقاس..."></div>
                 <div class="field-box"><label>الغرض:</label><input type="text" id="newProdPurpose" placeholder="الغرض..."></div>
                 <div class="field-box"><label>السعر التجاري (ج.م):</label><input type="number" id="newProdPrice" placeholder="0.00"></div>
@@ -319,6 +318,7 @@
                 <div class="field-box"><label>اسم شريك 1:</label><input type="text" id="newProdPartner1" placeholder="شريك 1..."></div>
                 <div class="field-box"><label>اسم شريك 2:</label><input type="text" id="newProdPartner2" placeholder="شريك 2..."></div>
                 <div class="field-box"><label>تاريخ الصلاحية:</label><input type="date" id="newProdExpiry"></div>
+                <div class="field-box"><label>اسم المورد:</label><input type="text" id="newProdSupplier" list="suppliersList" autocomplete="off" placeholder="اسم المورد..."></div>
                 <div class="field-box">
                     <label>الباركود:</label>
                     <div style="display:flex; gap:6px;">
@@ -338,14 +338,13 @@
         </div>
     </div>
 
-    <!-- 4. آجل العملاء -->
+    <!-- 4. آجل العملاء وتدقيق السداد -->
     <div id="creditTab" class="tab-content admin-only">
-        <div class="section-title">📝 دفتر البيع الآجل وحسابات العملاء</div>
+        <div class="section-title">📝 دفتر البيع الآجل وتحصيل ديون العملاء</div>
         <div class="card">
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
-                <div>من: <input type="date" id="creditFromDate" onchange="renderCreditReport()"></div>
-                <div>إلى: <input type="date" id="creditToDate" onchange="renderCreditReport()"></div>
+                <button class="btn btn-purple" style="width:auto; margin:0;" onclick="promptCustomerPayment()">تسجيل سداد / تحصيل من عميل 💵</button>
             </div>
         </div>
 
@@ -357,7 +356,7 @@
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم العميل</th><th>رقم الفاتورة</th><th>التاريخ</th><th>الأصناف المباعة</th><th>إجمالي الفاتورة</th><th>البائع</th></tr>
+                <tr><th>#</th><th>اسم العميل</th><th>رقم الفاتورة</th><th>التاريخ</th><th>الأصناف المباعة</th><th>إجمالي الفاتورة</th><th>المسدد</th><th>المتبقي</th><th>البائع</th></tr>
             </thead>
             <tbody id="creditTableBody"></tbody>
         </table></div>
@@ -525,17 +524,41 @@
 
         let suppObj = { name: name, phone1: phone1, phone2: phone2, address: address, notes: notes };
         let idx = suppliers.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
-        if (idx !== -1) {
-            suppliers[idx] = suppObj;
-        } else {
-            suppliers.push(suppObj);
-        }
+        if (idx !== -1) suppliers[idx] = suppObj;
+        else suppliers.push(suppObj);
 
         syncToCloud("saveSupplier", suppObj);
         closeSupplierModal();
         updateSuppliersDatalist();
         renderSuppliersReport();
         alert(`✅ تم حفظ بيانات المورد (${name}) بنجاح!`);
+    }
+
+    function promptCustomerPayment() {
+        const custName = prompt("أدخل اسم العميل المسدد للدفعة:");
+        if (!custName) return;
+
+        const amount = parseFloat(prompt(`أدخل المبلغ المسدد من العميل (${custName}):`));
+        if (!amount || amount <= 0) return alert("المبلغ غير صحيح!");
+
+        syncToCloud("payCredit", { customerName: custName, amount: amount });
+
+        // تعديل محلي فوري
+        let rem = amount;
+        savedInvoices.forEach(inv => {
+            if (inv.paymentType === 'credit' && inv.customerName && inv.customerName.toLowerCase() === custName.toLowerCase() && rem > 0) {
+                let paid = inv.paidAmount || 0;
+                let due = inv.totalEGP - paid;
+                if (due > 0) {
+                    let p = Math.min(due, rem);
+                    inv.paidAmount = paid + p;
+                    rem -= p;
+                }
+            }
+        });
+
+        renderCreditReport();
+        alert(`✅ تم تسجيل سداد مبلغ (${amount} ج.م) للعميل (${custName}) بنجاح!`);
     }
 
     function toggleCustomerNameField() {
@@ -547,9 +570,7 @@
         const list = document.getElementById('customersList');
         if (!list) return;
         let customers = new Set();
-        savedInvoices.forEach(i => {
-            if (i.customerName) customers.add(i.customerName);
-        });
+        savedInvoices.forEach(i => { if (i.customerName) customers.add(i.customerName); });
         list.innerHTML = Array.from(customers).map(c => `<option value="${c}">`).join('');
     }
 
@@ -832,17 +853,12 @@
             document.getElementById('searchInput').value = barcodeQuery;
             searchProduct();
         } else if (key === 'addNew') {
-            // التحقق من تكرار الباركود قبل وضعه
-            if (isBarcodeExists(barcodeQuery)) {
-                return alert(`⚠️ الباركود [${barcodeQuery}] مكرر ومسجل لصنف آخر بالفعل!`);
-            }
+            if (isBarcodeExists(barcodeQuery)) return alert(`⚠️ الباركود [${barcodeQuery}] مكرر ومسجل لصنف آخر بالفعل!`);
             document.getElementById('newProdBarcode').value = barcodeQuery;
             alert("✅ تم التقاط الباركود: " + barcodeQuery);
         } else if (key === 'stock') {
             if (selectedStockEditProduct) {
-                if (isBarcodeExists(barcodeQuery, selectedStockEditProduct.n)) {
-                    return alert(`⚠️ الباركود [${barcodeQuery}] مكرر ومسجل لصنف آخر بالفعل!`);
-                }
+                if (isBarcodeExists(barcodeQuery, selectedStockEditProduct.n)) return alert(`⚠️ الباركود [${barcodeQuery}] مكرر ومسجل لصنف آخر بالفعل!`);
                 selectedStockEditProduct.barcode = barcodeQuery;
                 syncToCloud("updateSingleProduct", selectedStockEditProduct);
                 alert(`✅ تم ربط الباركود [${barcodeQuery}] بالمنتج (${selectedStockEditProduct.n}) بنجاح!`);
@@ -876,10 +892,7 @@
 
         if (!prod.barcode || prod.barcode.trim() === "") {
             let newBarcode = "";
-            do {
-                newBarcode = "2026" + Math.floor(1000 + Math.random() * 9000);
-            } while (isBarcodeExists(newBarcode, prod.n));
-
+            do { newBarcode = "2026" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(newBarcode, prod.n));
             prod.barcode = newBarcode;
             syncToCloud("updateSingleProduct", prod);
             alert(`✅ تم إصدار باركود جديد للمنتج [${prod.n}]: (${prod.barcode})!`);
@@ -894,9 +907,7 @@
         const newName = prompt("اسم القطعة:", prod.n);
         if (!newName) return;
 
-        if (isProductNameExists(newName, prod.n)) {
-            return alert(`⚠️ اسم المنتج (${newName}) مكرر وموجود بالنظام بالفعل!`);
-        }
+        if (isProductNameExists(newName, prod.n)) return alert(`⚠️ اسم المنتج (${newName}) مكرر وموجود بالنظام بالفعل!`);
 
         const newSupplier = prompt("اسم المورد:", prod.supplier || "");
         const newSize = prompt("المقاس:", prod.size || "");
@@ -945,20 +956,11 @@
 
         if (!name) return alert('أدخل اسم الصنف أولاً!');
 
-        // منع تكرار اسم القطعة
-        if (isProductNameExists(name)) {
-            return alert(`⚠️ اسم المنتج (${name}) مكرر ومستجّل سابقاً بالسيستم!`);
-        }
-
-        // منع تكرار الباركود
-        if (barcode && isBarcodeExists(barcode)) {
-            return alert(`⚠️ الباركود [${barcode}] مكرر ومسجل لصنف آخر بالفعل!`);
-        }
+        if (isProductNameExists(name)) return alert(`⚠️ اسم المنتج (${name}) مكرر ومستجّل سابقاً بالسيستم!`);
+        if (barcode && isBarcodeExists(barcode)) return alert(`⚠️ الباركود [${barcode}] مكرر ومسجل لصنف آخر بالفعل!`);
 
         if (!barcode) {
-            do {
-                barcode = "2026" + Math.floor(1000 + Math.random() * 9000);
-            } while (isBarcodeExists(barcode));
+            do { barcode = "2026" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(barcode));
         }
 
         let prodObj = { n: name, supplier: supplier, size: size, purpose: purpose, p: price, sp: sellPrice, q: qty, p1: p1, p2: p2, barcode: barcode, expiry: formatDateShort(expiry) };
@@ -985,7 +987,7 @@
         updateLowStockAlert();
     }
 
-    // تصحيح قراءة واستخراج الحقول بدقة مطابقة لجوجل شيت
+    // مطابقة ترتيب شيت جوجل: اسم القطعة -> المقاس -> الغرض -> السعر التجاري -> سعر البيع -> الكمية المتاحة -> شريك 1 -> شريك 2 -> الباركود -> تاريخ الصلاحية -> المورد
     function renderStockTableCustom(list) {
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {
@@ -997,14 +999,14 @@
                 <td style="font-weight:bold;">${i.n || '-'}</td>
                 <td>${i.size || '-'}</td>
                 <td>${i.purpose || '-'}</td>
-                <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#27ae60'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
                 <td>${(i.p || 0).toFixed(2)}</td>
                 <td style="color:#27ae60; font-weight:bold;">${(i.sp || 0).toFixed(2)}</td>
-                <td style="color:#16a085; font-weight:bold;">${i.supplier || 'غير محدد'}</td>
+                <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#27ae60'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p1 || '-'}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p2 || '-'}</td>
                 <td style="font-family:monospace; font-weight:bold; color:#1e3c72;">${i.barcode || '-'}</td>
                 <td>${formatDateShort(i.expiry)}</td>
+                <td style="color:#16a085; font-weight:bold;">${i.supplier || 'غير محدد'}</td>
                 <td>
                     <button class="btn btn-blue" style="padding:3px 6px; font-size:0.72rem; margin:1px;" onclick="editProductDetails('${i.n}')">✏️ تعديل</button>
                     <button class="btn btn-purple" style="padding:3px 6px; font-size:0.72rem; margin:1px;" onclick="scanBarcodeForProduct('${i.n}')">📷 كاميرا</button>
@@ -1209,7 +1211,8 @@
             items: JSON.parse(JSON.stringify(invoiceItems)),
             itemsText: itemsSummaryText.join(" | "),
             totalComm: totalComm, totalEGP: finalTotalSell, netProfit: netProfit,
-            paymentType: pType, customerName: custName, discountPercent: discPercent
+            paymentType: pType, customerName: custName, discountPercent: discPercent,
+            paidAmount: pType === 'cash' ? finalTotalSell : 0
         };
 
         const existingIdx = savedInvoices.findIndex(i => i.id === activeInvoiceId);
@@ -1237,9 +1240,6 @@
 
     function renderCreditReport() {
         const queryName = document.getElementById('creditSearchCustomer').value.trim().toLowerCase();
-        const fromD = document.getElementById('creditFromDate').value;
-        const toD = document.getElementById('creditToDate').value;
-
         const tbody = document.getElementById('creditTableBody');
         let creditInvoices = savedInvoices.filter(i => i.paymentType === 'credit');
 
@@ -1248,13 +1248,12 @@
 
         creditInvoices.forEach(inv => {
             if (queryName && (!inv.customerName || !inv.customerName.toLowerCase().includes(queryName))) return;
-            if (inv.date) {
-                const invD = inv.date.slice(0, 10);
-                if (fromD && invD < fromD) return;
-                if (toD && invD > toD) return;
-            }
 
-            totalCredit += inv.totalEGP;
+            let paid = inv.paidAmount || 0;
+            let due = inv.totalEGP - paid;
+            if (due <= 0) return; // تم السداد بالكامل
+
+            totalCredit += due;
             rows.push(`
                 <tr>
                     <td>${rows.length + 1}</td>
@@ -1262,13 +1261,15 @@
                     <td style="font-weight:bold;">#${inv.id}</td>
                     <td>${formatDateShort(inv.date)}</td>
                     <td style="text-align:right; font-size:0.75rem;">${inv.itemsText || '-'}</td>
-                    <td style="color:#27ae60; font-weight:bold;">${inv.totalEGP.toFixed(2)} ج.م</td>
+                    <td style="font-weight:bold;">${inv.totalEGP.toFixed(2)} ج.م</td>
+                    <td style="color:#27ae60;">${paid.toFixed(2)} ج.م</td>
+                    <td style="color:#e74c3c; font-weight:bold;">${due.toFixed(2)} ج.م</td>
                     <td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
                 </tr>
             `);
         });
 
-        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="7">لا توجد ديون معروضة مطابقة للبحث</td></tr>';
+        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="9">لا توجد ديون معروضة مطابقة للبحث</td></tr>';
         else tbody.innerHTML = rows.join('');
 
         document.getElementById('creditTotalAmountVal').textContent = totalCredit.toFixed(2) + ' ج.م';

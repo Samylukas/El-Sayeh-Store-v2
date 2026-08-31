@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>El Sayeh Store ⚙️ - مركز السائح لقطع غيار السيارات</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -11,15 +11,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
-        html, body { width: 100%; overflow-x: hidden; background-color: #f0f2f5; padding: 8px; color: #333; direction: rtl; }
-        .app-container { width: 100%; max-width: 1050px; margin: 0 auto; background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: relative; min-height: 95vh; padding-bottom: 40px; }
-        h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.3rem; }
+        html, body { width: 100%; overflow-x: hidden; background-color: #f0f2f5; padding: 4px; color: #333; direction: rtl; }
+        
+        /* جعل الحاوية تتكيف 100% مع الموبايل بدون سكرول خارجي */
+        .app-container { width: 100%; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; min-height: 98vh; padding-bottom: 30px; overflow-x: hidden; }
+        h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.1rem; }
         
         .spinning-gear {
             display: inline-block;
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             vertical-align: middle;
-            margin: 0 4px;
+            margin: 0 2px;
             animation: spinGear 6s linear infinite;
         }
 
@@ -28,66 +30,66 @@
             to { transform: rotate(360deg); }
         }
 
-        .sync-status { text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; padding: 6px; border-radius: 6px; }
+        .sync-status { text-align: center; font-size: 0.8rem; font-weight: bold; margin-bottom: 6px; padding: 4px; border-radius: 6px; }
         .status-online { background: #d4edda; color: #155724; }
         .status-syncing { background: #fff3cd; color: #856404; }
 
-        .alerts-bar { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.82rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .alerts-bar { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.78rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
 
-        .nav-tabs { display: flex; gap: 6px; margin-bottom: 15px; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .tab-btn { background: #e9ecef; color: #2c3e50; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 0.85rem; flex-shrink: 0; }
+        .nav-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 2px solid #e0e0e0; padding-bottom: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tab-btn { background: #e9ecef; color: #2c3e50; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 0.8rem; flex-shrink: 0; }
         .tab-btn.active { background: #1e3c72; color: #fff; }
 
         .tab-content { display: none; width: 100%; }
         .tab-content.active { display: block; }
 
-        .section-title { font-weight: bold; margin-bottom: 10px; color: #1e3c72; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-size: 1rem; }
+        .section-title { font-weight: bold; margin-bottom: 8px; color: #1e3c72; border-bottom: 2px solid #3498db; padding-bottom: 4px; font-size: 0.95rem; }
         
-        .search-box { width: 100%; padding: 10px; font-size: 14px; border: 2px solid #3498db; border-radius: 8px; outline: none; margin-bottom: 8px; box-sizing: border-box; background: #fff; }
-        .results-list { max-height: 200px; overflow-y: auto; border: 2px solid #3498db; border-radius: 8px; margin-bottom: 12px; display: none; background: #ffffff; position: relative; z-index: 99999; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .result-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 0.85rem; }
+        .search-box { width: 100%; padding: 8px; font-size: 13px; border: 2px solid #3498db; border-radius: 6px; outline: none; margin-bottom: 6px; box-sizing: border-box; background: #fff; }
+        .results-list { max-height: 180px; overflow-y: auto; border: 2px solid #3498db; border-radius: 6px; margin-bottom: 8px; display: none; background: #ffffff; position: relative; z-index: 99999; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .result-item { padding: 6px 8px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 0.8rem; }
 
-        .card { background: #f8f9fa; border: 1px solid #e0e0e0; padding: 12px; border-radius: 8px; margin-bottom: 12px; box-sizing: border-box; width: 100%; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; flex-wrap: wrap; gap: 6px; }
+        .card { background: #f8f9fa; border: 1px solid #e0e0e0; padding: 10px; border-radius: 8px; margin-bottom: 8px; box-sizing: border-box; width: 100%; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.8rem; flex-wrap: wrap; gap: 4px; }
         
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 8px; width: 100%; box-sizing: border-box; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 6px; width: 100%; box-sizing: border-box; }
         .field-box { display: flex; flex-direction: column; width: 100%; }
-        .field-box label { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; color: #2c3e50; }
-        .field-box input, .field-box select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; text-align: center; font-size: 0.9rem; box-sizing: border-box; background: #fff; }
+        .field-box label { font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; color: #2c3e50; }
+        .field-box input, .field-box select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; text-align: center; font-size: 0.85rem; box-sizing: border-box; background: #fff; }
 
-        .btn { background: #27ae60; color: white; border: none; padding: 10px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; font-size: 0.9rem; }
+        .btn { background: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 8px; width: 100%; font-size: 0.85rem; }
         .btn-blue { background: #3498db; }
         .btn-red { background: #e74c3c; }
         .btn-purple { background: #8e44ad; }
         .btn-orange { background: #e67e22; }
 
-        .nav-controls { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
-        .nav-controls .btn { width: auto; font-size: 0.8rem; padding: 6px 12px; margin-top: 0; }
+        .nav-controls { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
+        .nav-controls .btn { width: auto; font-size: 0.75rem; padding: 4px 8px; margin-top: 0; }
 
-        /* الجداول المرنة الديناميكية السلسة */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; border-radius: 6px; }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        th, td { padding: 8px 6px; border: 1px solid #ddd; text-align: center; font-size: 0.8rem; word-break: break-word; vertical-align: middle; }
-        th { background: #1e3c72; color: white; white-space: nowrap; font-size: 0.82rem; }
+        /* --- جعل الجداول ديناميكية بالكامل وتتأقلم مع الشاشة --- */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #ccc; }
+        table { width: 100%; border-collapse: collapse; background: #fff; table-layout: auto; }
+        th, td { padding: 6px 4px; border: 1px solid #ddd; text-align: center; font-size: 0.72rem; word-break: break-all; vertical-align: middle; }
+        th { background: #1e3c72; color: white; white-space: nowrap; font-size: 0.75rem; }
 
-        .action-btn-group { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
-        .action-btn-group .btn { width: auto; font-size: 0.72rem; padding: 4px 6px; margin: 0; }
+        .action-btn-group { display: flex; flex-direction: row; flex-wrap: wrap; gap: 2px; justify-content: center; min-width: 110px; }
+        .action-btn-group .btn { width: auto; font-size: 0.65rem; padding: 2px 4px; margin: 0; line-height: 1.2; }
 
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
-        .login-card { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 380px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .login-card { background: white; padding: 20px; border-radius: 12px; text-align: center; width: 92%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         
-        .pass-container { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
-        .toggle-pass-btn { background: #e9ecef; border: 1px solid #ccc; padding: 9px; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+        .pass-container { display: flex; gap: 4px; align-items: center; margin-top: 4px; }
+        .toggle-pass-btn { background: #e9ecef; border: 1px solid #ccc; padding: 7px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
 
-        .totals-box { background: #1e3c72; color: #fff; padding: 12px; border-radius: 8px; margin-top: 15px; }
-        .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; font-size: 0.75rem; text-align: center; }
-        .total-item { background: rgba(255,255,255,0.1); padding: 6px 4px; border-radius: 6px; }
-        .total-item span { display: block; font-weight: bold; font-size: 0.88rem; color: #f1c40f; margin-top: 2px; }
+        .totals-box { background: #1e3c72; color: #fff; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 4px; font-size: 0.7rem; text-align: center; }
+        .total-item { background: rgba(255,255,255,0.1); padding: 4px 2px; border-radius: 4px; }
+        .total-item span { display: block; font-weight: bold; font-size: 0.8rem; color: #f1c40f; margin-top: 2px; }
 
-        .footer-signature { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e0e0e0; font-size: 0.75rem; color: #7f8c8d; font-weight: bold; }
+        .footer-signature { text-align: center; margin-top: 15px; padding-top: 8px; border-top: 1px solid #e0e0e0; font-size: 0.7rem; color: #7f8c8d; font-weight: bold; }
 
-        .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 12px; position: relative; text-align: center; }
-        .camera-div { width: 100%; max-width: 400px; margin: 0 auto; min-height: 200px; }
+        .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
+        .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
 
         @media print {
             body.printing-receipt * { visibility: hidden; }
@@ -95,7 +97,7 @@
             #receiptPrintSection { position: absolute; left: 0; top: 0; width: 80mm; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; direction: rtl; color: #000; }
         }
 
-        .pdf-export-mode table { min-width: 100% !important; font-size: 10px !important; }
+        .pdf-export-mode table { min-width: 100% !important; font-size: 9px !important; }
         .pdf-export-mode .no-pdf { display: none !important; }
     </style>
 </head>
@@ -103,11 +105,11 @@
 
 <div id="loginOverlay" class="login-overlay">
     <div class="login-card">
-        <h2 style="color:#1e3c72; margin-bottom:10px; font-size:1.2rem;"><span class="spinning-gear">⚙️</span> El Sayeh Store</h2>
-        <p style="font-size:0.8rem; color:#555; margin-bottom:15px;">تسجيل الدخول للنظام</p>
+        <h2 style="color:#1e3c72; margin-bottom:10px; font-size:1.1rem;"><span class="spinning-gear">⚙️</span> El Sayeh Store</h2>
+        <p style="font-size:0.78rem; color:#555; margin-bottom:12px;">تسجيل الدخول للنظام</p>
         
-        <div style="margin-bottom:10px; text-align:right;">
-            <label style="font-size:0.8rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
+        <div style="margin-bottom:8px; text-align:right;">
+            <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
             <select id="entryUserSelect" class="search-box" style="text-align:center; margin-top:4px;">
                 <option value="admin">admin</option>
                 <option value="cs2">cs2</option>
@@ -115,47 +117,47 @@
             </select>
         </div>
 
-        <div style="margin-bottom:15px; text-align:right;">
-            <label style="font-size:0.8rem; font-weight:bold; color:#1e3c72;">كلمة المرور:</label>
+        <div style="margin-bottom:12px; text-align:right;">
+            <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">كلمة المرور:</label>
             <div class="pass-container">
                 <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-bottom:0;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
                 <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()">👁️</button>
             </div>
         </div>
 
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:6px;">
             <button type="button" class="btn btn-blue" style="margin-top:0;" onclick="validateEntryPassword()">تسجيل الدخول</button>
             <button type="button" class="btn btn-red" style="margin-top:0;" onclick="closeApp()">خروج من البرنامج</button>
         </div>
 
-        <div class="footer-signature" style="margin-top:15px;">El Sayeh Store 2026 | D&P Samy Luks</div>
+        <div class="footer-signature" style="margin-top:12px;">El Sayeh Store 2026 | D&P Samy Luks</div>
     </div>
 </div>
 
 <div id="activationOverlay" class="login-overlay" style="display:none; z-index:99999999;">
     <div class="login-card">
-        <h2 style="color:#e74c3c; margin-bottom:10px; font-size:1.2rem;">🔒 انتهاء فترة الاشتراك</h2>
-        <p style="font-size:0.85rem; color:#333; margin-bottom:15px;">لقد مضى شهر على استخدام النظام. يرجى أدخال كود التفعيل للشهر الجديد للفتح:</p>
+        <h2 style="color:#e74c3c; margin-bottom:10px; font-size:1.1rem;">🔒 انتهاء فترة الاشتراك</h2>
+        <p style="font-size:0.8rem; color:#333; margin-bottom:12px;">لقد مضى شهر على استخدام النظام. يرجى أدخال كود التفعيل للشهر الجديد للفتح:</p>
         <input type="password" id="activationCodeInput" class="search-box" style="text-align:center;" placeholder="أدخل كود التفعيل...">
         <button type="button" class="btn btn-purple" onclick="verifyActivationCode()">تفعيل النظام 🔑</button>
     </div>
 </div>
 
 <div id="payCreditModal" class="login-overlay" style="display:none; z-index:999999;">
-    <div class="login-card" style="max-width:380px; text-align:right;">
-        <h3 style="color:#1e3c72; margin-bottom:12px; text-align:center;">💵 تسجيل سداد / تحصيل من عميل</h3>
+    <div class="login-card" style="max-width:360px; text-align:right;">
+        <h3 style="color:#1e3c72; margin-bottom:10px; text-align:center; font-size:1rem;">💵 تسجيل سداد / تحصيل من عميل</h3>
         <div class="field-box" style="margin-bottom:8px;">
             <label>اختر العميل:</label>
             <select id="payCreditCustomerSelect" class="search-box" style="margin-top:4px;" onchange="updateSelectedCustomerDueLabel()"></select>
         </div>
-        <div style="font-size:0.85rem; font-weight:bold; color:#e74c3c; margin-bottom:10px;" id="selectedCustDueVal">
+        <div style="font-size:0.8rem; font-weight:bold; color:#e74c3c; margin-bottom:8px;" id="selectedCustDueVal">
             المتبقي عليه: 0.00 ج.م
         </div>
-        <div class="field-box" style="margin-bottom:12px;">
+        <div class="field-box" style="margin-bottom:10px;">
             <label>المبلغ المسدد (ج.م):</label>
             <input type="number" id="payCreditAmountInput" placeholder="أدخل المبلغ...">
         </div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:6px;">
             <button class="btn btn-purple" style="margin-top:0;" onclick="submitCreditPayment()">تأكيد التحصيل 💾</button>
             <button class="btn btn-red" style="margin-top:0;" onclick="closePayCreditModal()">إلغاء ❌</button>
         </div>
@@ -163,29 +165,29 @@
 </div>
 
 <div id="supplierModal" class="login-overlay" style="display:none; z-index:999999;">
-    <div class="login-card" style="max-width:420px; text-align:right;">
-        <h3 style="color:#1e3c72; margin-bottom:12px; text-align:center;">🚚 إضافة / تعديل بيانات المورد</h3>
-        <div class="field-box" style="margin-bottom:8px;">
+    <div class="login-card" style="max-width:380px; text-align:right;">
+        <h3 style="color:#1e3c72; margin-bottom:10px; text-align:center; font-size:1rem;">🚚 إضافة / تعديل بيانات المورد</h3>
+        <div class="field-box" style="margin-bottom:6px;">
             <label>اسم المورد:</label>
             <input type="text" id="suppModalName" autocomplete="off" placeholder="اسم المورد بالكامل...">
         </div>
-        <div class="field-box" style="margin-bottom:8px;">
+        <div class="field-box" style="margin-bottom:6px;">
             <label>رقم الهاتف 1:</label>
             <input type="text" id="suppModalPhone1" placeholder="رقم الهاتف الرئيسي...">
         </div>
-        <div class="field-box" style="margin-bottom:8px;">
+        <div class="field-box" style="margin-bottom:6px;">
             <label>رقم الهاتف 2:</label>
             <input type="text" id="suppModalPhone2" placeholder="رقم الهاتف الإضافي...">
         </div>
-        <div class="field-box" style="margin-bottom:8px;">
+        <div class="field-box" style="margin-bottom:6px;">
             <label>العنوان:</label>
             <input type="text" id="suppModalAddress" placeholder="عنوان المورد / المحافظة...">
         </div>
-        <div class="field-box" style="margin-bottom:12px;">
+        <div class="field-box" style="margin-bottom:10px;">
             <label>ملاحظات:</label>
             <input type="text" id="suppModalNotes" placeholder="ملاحظات وشروط التوريد...">
         </div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:6px;">
             <button class="btn btn-purple" style="margin-top:0;" onclick="saveSupplierFromModal()">حفظ المورد 💾</button>
             <button class="btn btn-red" style="margin-top:0;" onclick="closeSupplierModal()">إلغاء ❌</button>
         </div>
@@ -193,9 +195,9 @@
 </div>
 
 <div class="app-container" id="mainContainer" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:6px; margin-bottom:8px;">
-        <span id="userGreeting" style="font-weight:bold; color:#1e3c72; font-size:0.85rem;">👤 المستخدم: -</span>
-        <button class="btn btn-red" style="width:auto; margin:0; padding:4px 8px; font-size:0.75rem;" onclick="logout()">تسجيل الخروج 🚪</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:4px; margin-bottom:6px;">
+        <span id="userGreeting" style="font-weight:bold; color:#1e3c72; font-size:0.78rem;">👤 المستخدم: -</span>
+        <button class="btn btn-red" style="width:auto; margin:0; padding:3px 6px; font-size:0.7rem;" onclick="logout()">تسجيل الخروج 🚪</button>
     </div>
 
     <h1><span class="spinning-gear">⚙️</span> El Sayeh Store - مركز السائح لقطع غيار السيارات</h1>
@@ -203,7 +205,7 @@
 
     <div id="alertsContainer" class="alerts-bar">
         <div>🔔 ملخص النواقص: <span id="lowStockCountVal" style="color:#c0392b;">0 قطع ناقصة</span></div>
-        <button class="btn btn-purple manager-only" style="width:auto; margin:0; padding:3px 8px; font-size:0.72rem;" onclick="filterLowStock()">عرض النواقص 📦</button>
+        <button class="btn btn-purple manager-only" style="width:auto; margin:0; padding:2px 6px; font-size:0.7rem;" onclick="filterLowStock()">عرض النواقص 📦</button>
     </div>
 
     <div class="nav-tabs">
@@ -221,15 +223,15 @@
     <div id="salesTab" class="tab-content active">
         <div class="section-title">🛒 إنشاء / تعديل فاتورة مبيعات</div>
 
-        <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
-            <button class="btn btn-blue" style="width: auto; margin: 0; font-size:0.8rem;" onclick="fetchCloudData()">تحديث أونلاين 🔄</button>
-            <button class="btn btn-orange" style="width: auto; margin: 0; font-size:0.8rem;" onclick="prepareNewInvoice()">فاتورة جديدة ➕</button>
-            <button class="btn btn-red" style="width: auto; margin: 0; font-size:0.8rem;" onclick="clearCurrentInvoice()">تفريغ الفاتورة (F8) 🧹</button>
+        <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
+            <button class="btn btn-blue" style="width: auto; margin: 0; font-size:0.75rem;" onclick="fetchCloudData()">تحديث أونلاين 🔄</button>
+            <button class="btn btn-orange" style="width: auto; margin: 0; font-size:0.75rem;" onclick="prepareNewInvoice()">فاتورة جديدة ➕</button>
+            <button class="btn btn-red" style="width: auto; margin: 0; font-size:0.75rem;" onclick="clearCurrentInvoice()">تفريغ الفاتورة (F8) 🧹</button>
         </div>
 
-        <div class="info-row" style="background: #eef7fe; padding: 10px; border-radius: 6px; align-items: center;">
-            <div>تاريخ الفاتورة: <input type="datetime-local" id="invoiceDate" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc;"></div>
-            <div>رقم الفاتورة: <span id="invNum" style="color: #1e3c72; font-size: 1.2rem; font-weight: bold;">1001</span></div>
+        <div class="info-row" style="background: #eef7fe; padding: 8px; border-radius: 6px; align-items: center;">
+            <div>تاريخ الفاتورة: <input type="datetime-local" id="invoiceDate" style="padding: 2px; border-radius: 4px; border: 1px solid #ccc; font-size:0.75rem;"></div>
+            <div>رقم الفاتورة: <span id="invNum" style="color: #1e3c72; font-size: 1.1rem; font-weight: bold;">1001</span></div>
         </div>
 
         <div class="card" style="background:#fff8e7; border:1px solid #ffe8b3;">
@@ -260,27 +262,27 @@
             <button class="btn btn-blue" onclick="navigateInvoice('last')">الأخيرة ⏭️</button>
         </div>
 
-        <div style="display:flex; gap:6px; margin-top:12px;">
+        <div style="display:flex; gap:4px; margin-top:8px;">
             <input type="text" id="searchInput" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="امسح الباركود لقراءة الصنف فوراً أو اكتب اسم القطعة... (F4)" oninput="searchProduct()">
-            <button class="btn btn-purple" style="width:auto; margin-top:0; white-space:nowrap; padding: 0 12px;" onclick="toggleCameraScanner('sales')">📷 كاميرا الباركود (F2)</button>
+            <button class="btn btn-purple" style="width:auto; margin-top:0; white-space:nowrap; padding: 0 8px; font-size:0.75rem;" onclick="toggleCameraScanner('sales')">📷 كاميرا (F2)</button>
         </div>
 
         <div id="salesScannerContainer" class="scanner-box">
             <div id="salesCameraReader" class="camera-div"></div>
-            <button class="btn btn-red" style="margin:5px auto; width:90%; padding:6px;" onclick="stopCameraScanner('sales')">إغلاق الكاميرا ❌</button>
+            <button class="btn btn-red" style="margin:4px auto; width:90%; padding:4px;" onclick="stopCameraScanner('sales')">إغلاق الكاميرا ❌</button>
         </div>
 
         <div id="searchResults" class="results-list"></div>
 
-        <div id="productCard" class="card" style="display:none; margin-top: 8px;">
-            <h3 id="prodName" style="color: #1e3c72; margin-bottom: 10px; font-size: 1.1rem;"></h3>
+        <div id="productCard" class="card" style="display:none; margin-top: 6px;">
+            <h3 id="prodName" style="color: #1e3c72; margin-bottom: 6px; font-size: 0.95rem;"></h3>
             <div class="info-row">
-                <div>المخزون المتاح: <span id="stockQty" style="color:#27ae60;">0</span> قطعة</div>
-                <div>السعر التجاري: <span id="commPrice" style="color:#2c3e50;">0</span> ج.م</div>
-                <div>سعر البيع: <span id="sellPriceVal" style="color:#e67e22;">0</span> ج.م</div>
+                <div>المخزون: <span id="stockQty" style="color:#27ae60;">0</span> قطعة</div>
+                <div>التجاري: <span id="commPrice" style="color:#2c3e50;">0</span> ج.م</div>
+                <div>البيع: <span id="sellPriceVal" style="color:#e67e22;">0</span> ج.م</div>
             </div>
 
-            <div class="form-grid" style="margin-top:10px;">
+            <div class="form-grid" style="margin-top:6px;">
                 <div class="field-box"><label>الكمية المباعة:</label><input type="number" id="sellQty" value="1" min="1" oninput="calculateItemTotal()"></div>
                 <div class="field-box"><label>سعر البيع الفعلي (ج.م):</label><input type="number" id="actualSellPrice" value="0" oninput="calculateItemTotal()"></div>
                 <div class="field-box"><label>الإجمالي (ج.م):</label><input type="number" id="itemTotalCalc" value="0" readonly style="background:#e9ecef; font-weight:bold; color:#1e3c72;"></div>
@@ -289,41 +291,41 @@
             <button class="btn" onclick="addToInvoice()">إضافة للفاتورة 🛒</button>
         </div>
 
-        <div class="section-title" style="margin-top: 20px;">📄 أصناف الفاتورة الحالية</div>
+        <div class="section-title" style="margin-top: 15px;">📄 أصناف الفاتورة الحالية</div>
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>الشركاء</th><th>الكمية</th><th>السعر التجاري</th><th>سعر البيع</th><th>الإجمالي (ج.م)</th><th>البائع</th><th>إجراء</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>الشركاء</th><th>الكمية</th><th>السعر التجاري</th><th>سعر البيع</th><th>الإجمالي</th><th>البائع</th><th>إجراء</th></tr>
             </thead>
             <tbody id="invoiceTableBody"><tr><td colspan="9">لم يتم إضافة أصناف بعد</td></tr></tbody>
         </table></div>
 
-        <div class="totals-box" style="margin-top:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; flex-wrap:wrap; gap:10px;">
-                <div>قبل الخصم: <span id="subTotalEGP" style="color:#fff;">0.00 ج.م</span></div>
-                <div>قيمة الخصم: <span id="discountValEGP" style="color:#e74c3c;">0.00 ج.م</span></div>
-                <div>صافي الفاتورة: <span id="liveTotalEGP" style="color:#f1c40f; font-weight:bold; font-size:1.3rem;">0.00 ج.م</span></div>
+        <div class="totals-box" style="margin-top:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; flex-wrap:wrap; gap:6px;">
+                <div>قبل الخصم: <span id="subTotalEGP" style="color:#fff;">0.00</span></div>
+                <div>الخصم: <span id="discountValEGP" style="color:#e74c3c;">0.00</span></div>
+                <div>الصافي: <span id="liveTotalEGP" style="color:#f1c40f; font-weight:bold; font-size:1.1rem;">0.00 ج.م</span></div>
             </div>
         </div>
 
-        <div style="display:flex; gap:10px; margin-top: 15px;">
-            <button class="btn btn-purple" style="font-size: 1.1rem; padding: 12px;" onclick="saveInvoice()">حفظ الفاتورة فقط (Ctrl+S) 💾</button>
-            <button class="btn btn-blue" style="font-size: 1.1rem; padding: 12px;" onclick="saveAndPrintInvoice()">حفظ وطباعة الإيصال 🖨️</button>
+        <div style="display:flex; gap:6px; margin-top: 10px;">
+            <button class="btn btn-purple" style="font-size: 0.9rem; padding: 10px;" onclick="saveInvoice()">حفظ الفاتورة (Ctrl+S) 💾</button>
+            <button class="btn btn-blue" style="font-size: 0.9rem; padding: 10px;" onclick="saveAndPrintInvoice()">حفظ وطباعة 🖨️</button>
         </div>
     </div>
 
-    <!-- 2. تفاصيل المخزون الديناميكي -->
+    <!-- 2. تفاصيل المخزون الديناميكي المنظم -->
     <div id="stockTab" class="tab-content manager-only">
         <div class="section-title">📦 تفاصيل المخزون والباركود والشركاء</div>
         <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة أو الباركود..." oninput="filterStockTable(this.value)">
 
-        <div id="stockScannerContainer" class="scanner-box" style="margin-top:10px;">
+        <div id="stockScannerContainer" class="scanner-box" style="margin-top:6px;">
             <div id="stockCameraReader" class="camera-div"></div>
-            <button class="btn btn-red" style="margin:5px auto; width:90%; padding:6px;" onclick="stopCameraScanner('stock')">إغلاق الكاميرا ❌</button>
+            <button class="btn btn-red" style="margin:4px auto; width:90%; padding:4px;" onclick="stopCameraScanner('stock')">إغلاق الكاميرا ❌</button>
         </div>
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة التجاري</th><th>سعر البيع</th><th>الكمية المتاحة</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th>خيارات وإجراءات</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th>إجراءات وخيارات</th></tr>
             </thead>
             <tbody id="stockTableBody"></tbody>
         </table></div>
@@ -346,20 +348,20 @@
                 <div class="field-box"><label>اسم المورد:</label><input type="text" id="newProdSupplier" list="suppliersList" autocomplete="off" placeholder="اسم المورد..."></div>
                 <div class="field-box">
                     <label>الباركود:</label>
-                    <div style="display:flex; gap:6px;">
+                    <div style="display:flex; gap:4px;">
                         <input type="text" id="newProdBarcode" placeholder="الباركود...">
-                        <button class="btn btn-purple" style="width:auto; margin:0; padding:0 12px; font-size:0.8rem; white-space:nowrap;" onclick="toggleCameraScanner('addNew')">📷 مسح</button>
+                        <button class="btn btn-purple" style="width:auto; margin:0; padding:0 8px; font-size:0.75rem; white-space:nowrap;" onclick="toggleCameraScanner('addNew')">📷 مسح</button>
                     </div>
                 </div>
             </div>
             <datalist id="suppliersList"></datalist>
 
-            <div id="addNewScannerContainer" class="scanner-box" style="margin-top:10px;">
+            <div id="addNewScannerContainer" class="scanner-box" style="margin-top:8px;">
                 <div id="addNewCameraReader" class="camera-div"></div>
-                <button class="btn btn-red" style="margin:5px auto; width:90%; padding:6px;" onclick="stopCameraScanner('addNew')">إغلاق الكاميرا ❌</button>
+                <button class="btn btn-red" style="margin:4px auto; width:90%; padding:4px;" onclick="stopCameraScanner('addNew')">إغلاق الكاميرا ❌</button>
             </div>
 
-            <button class="btn btn-purple" style="margin-top: 15px; font-size:1rem; padding:12px;" onclick="addNewProductToSystem()">حفظ الصنف في النظام 📦</button>
+            <button class="btn btn-purple" style="margin-top: 10px; font-size:0.9rem; padding:10px;" onclick="addNewProductToSystem()">حفظ الصنف في النظام 📦</button>
         </div>
     </div>
 
@@ -367,21 +369,21 @@
     <div id="creditTab" class="tab-content admin-only">
         <div class="section-title">📝 دفتر البيع الآجل وتحصيل ديون العملاء</div>
         <div class="card">
-            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
                 <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
-                <button class="btn btn-purple" style="width:auto; margin:0;" onclick="openPayCreditModal()">تسجيل سداد / تحصيل من عميل 💵</button>
+                <button class="btn btn-purple" style="width:auto; margin:0; font-size:0.75rem;" onclick="openPayCreditModal()">تسجيل سداد / تحصيل 💵</button>
             </div>
         </div>
 
-        <div id="creditSummaryBox" class="totals-box" style="background:#2c3e50; margin-bottom:12px;">
+        <div id="creditSummaryBox" class="totals-box" style="background:#2c3e50; margin-bottom:8px;">
             <div class="totals-grid">
-                <div class="total-item">إجمالي الديون المعروضة <span id="creditTotalAmountVal" style="color:#e74c3c;">0.00 ج.م</span></div>
+                <div class="total-item">إجمالي الديون <span id="creditTotalAmountVal" style="color:#e74c3c;">0.00 ج.م</span></div>
             </div>
         </div>
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم العميل</th><th>رقم الفاتورة</th><th>التاريخ</th><th>الأصناف المباعة</th><th>إجمالي الفاتورة</th><th>المسدد</th><th>المتبقي</th><th>البائع</th></tr>
+                <tr><th>#</th><th>اسم العميل</th><th>الفاتورة</th><th>التاريخ</th><th>الأصناف</th><th>الإجمالي</th><th>المسدد</th><th>المتبقي</th><th>البائع</th></tr>
             </thead>
             <tbody id="creditTableBody"></tbody>
         </table></div>
@@ -391,14 +393,14 @@
     <div id="suppliersTab" class="tab-content admin-only">
         <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
             <span>🚚 دفتر الموردين والمشتريات</span>
-            <button class="btn btn-blue" style="width:auto; margin:0; padding:6px 12px; font-size:0.8rem;" onclick="openSupplierModal()">إدارة الموردين (إضافة / تعديل) ➕</button>
+            <button class="btn btn-blue" style="width:auto; margin:0; padding:4px 8px; font-size:0.75rem;" onclick="openSupplierModal()">إدارة الموردين ➕</button>
         </div>
 
         <input type="text" id="supplierFilterInput" class="search-box" autocomplete="off" placeholder="ابحث باسم المورد أو الهاتف..." oninput="renderSuppliersReport()">
         
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم المورد</th><th>هاتف 1</th><th>هاتف 2</th><th>العنوان</th><th>ملاحظات</th><th>المنتجات التابعة له</th><th>إجمالي القطع بالمخزن</th><th>إجمالي التكلفة التجاري</th><th>إجراء</th></tr>
+                <tr><th>#</th><th>المورد</th><th>هاتف 1</th><th>هاتف 2</th><th>العنوان</th><th>ملاحظات</th><th>الأصناف التابعة له</th><th>قطع المخزن</th><th>إجمالي التكلفة</th><th>إجراء</th></tr>
             </thead>
             <tbody id="suppliersTableBody"></tbody>
         </table></div>
@@ -408,37 +410,37 @@
     <div id="reportsTab" class="tab-content admin-only">
         <div class="section-title">📊 تقارير المبيعات وتفصيل أرباح الشركاء والفرع الرئيسي</div>
         <div class="card">
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <div>من: <input type="date" id="fromDate"></div>
-                <div>إلى: <input type="date" id="toDate"></div>
-                <div>تصفية الشركاء: 
-                    <select id="partnerFilterSelect" onchange="generateReport()">
-                        <option value="ALL">الكل (الفرع الرئيسي + الشركاء)</option>
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                <div>من: <input type="date" id="fromDate" style="font-size:0.75rem;"></div>
+                <div>إلى: <input type="date" id="toDate" style="font-size:0.75rem;"></div>
+                <div>تصفية: 
+                    <select id="partnerFilterSelect" onchange="generateReport()" style="font-size:0.75rem;">
+                        <option value="ALL">الكل (الفرع + الشركاء)</option>
                         <option value="MAIN">الفرع الرئيسي فقط</option>
                     </select>
                 </div>
-                <button class="btn btn-blue" style="width:auto; margin:0;" onclick="generateReport()">عرض التقرير 📈</button>
-                <button class="btn btn-purple" style="width:auto; margin:0;" onclick="exportReportPDF()">تحميل التقرير PDF (Portrait) 📄</button>
+                <button class="btn btn-blue" style="width:auto; margin:0; font-size:0.75rem;" onclick="generateReport()">عرض 📈</button>
+                <button class="btn btn-purple" style="width:auto; margin:0; font-size:0.75rem;" onclick="exportReportPDF()">تحميل PDF 📄</button>
             </div>
         </div>
 
         <div id="pdfReportArea">
-            <div id="profitBox" class="totals-box" style="background:#1e3c72; margin-bottom:15px;">
-                <h3 style="text-align:center; margin-bottom:10px;" id="reportSummaryTitle">💵 ملخص تقرير مبيعات وأرباح الفترة - El Sayeh Store</h3>
+            <div id="profitBox" class="totals-box" style="background:#1e3c72; margin-bottom:10px;">
+                <h3 style="text-align:center; margin-bottom:6px; font-size:0.9rem;" id="reportSummaryTitle">💵 ملخص تقرير مبيعات وأرباح الفترة - El Sayeh Store</h3>
                 <div class="totals-grid">
-                    <div class="total-item">إجمالي المبيعات <span id="repTotalSell">0.00 ج.م</span></div>
-                    <div class="total-item">إجمالي التكلفة التجاري <span id="repTotalComm">0.00 ج.م</span></div>
-                    <div class="total-item" style="background:#27ae60; grid-column: span 2;">صافي الأرباح <span id="repNetProfit" style="font-size:1.1rem; color:#fff;">0.00 ج.م</span></div>
+                    <div class="total-item">المبيعات <span id="repTotalSell">0.00 ج.م</span></div>
+                    <div class="total-item">التكلفة التجاري <span id="repTotalComm">0.00 ج.م</span></div>
+                    <div class="total-item" style="background:#27ae60; grid-column: span 2;">صافي الأرباح <span id="repNetProfit" style="font-size:0.95rem; color:#fff;">0.00 ج.م</span></div>
                 </div>
             </div>
 
             <div class="table-responsive"><table>
                 <thead>
-                    <tr><th>#</th><th>رقم الفاتورة</th><th>نوع الدفع / العميل</th><th>التاريخ والوقت</th><th>تفاصيل الأصناف والشركاء</th><th>التكلفة</th><th>إجمالي البيع</th><th>صافي الربح</th><th class="no-pdf" style="width:180px;">خيارات وإجراءات</th></tr>
+                    <tr><th>#</th><th>الفاتورة</th><th>نوع الدفع / العميل</th><th>التاريخ والوقت</th><th>الأصناف</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th class="no-pdf">خيارات وإجراءات</th></tr>
                 </thead>
                 <tbody id="savedInvoicesBody"></tbody>
             </table></div>
-            <div class="footer-signature" style="margin-top:10px;">D&P Samy Luks</div>
+            <div class="footer-signature" style="margin-top:8px;">D&P Samy Luks</div>
         </div>
     </div>
 
@@ -452,21 +454,21 @@
                 <div class="field-box"><label>المبلغ (ج.م):</label><input type="number" id="finAmount" placeholder="0.00"></div>
                 <div class="field-box"><label>التاريخ والوقت:</label><input type="datetime-local" id="finDate"></div>
             </div>
-            <button class="btn btn-purple" style="margin-top: 10px;" onclick="saveFinanceEntry()">حفظ الحركة المالية 💾</button>
+            <button class="btn btn-purple" style="margin-top: 8px;" onclick="saveFinanceEntry()">حفظ الحركة المالية 💾</button>
         </div>
     </div>
 
     <!-- 8. الأمان والكلمات السرية -->
     <div id="usersTab" class="tab-content admin-only">
         <div class="section-title">🔑 إدارة الحسابات وتغيير كلمة المرور</div>
-        <div class="card" style="max-width:350px; margin:0 auto;">
+        <div class="card" style="max-width:320px; margin:0 auto;">
             <select id="userSelectPass" class="search-box"></select>
             <input type="password" id="newAccountPass" class="search-box" placeholder="كلمة المرور الجديدة...">
             <button class="btn btn-purple" onclick="changeUserPasswordSystem()">تحديث كلمة السر أونلاين 💾</button>
         </div>
     </div>
 
-    <div class="footer-signature">El Sayeh Store 2026 | D&P Samy Luks <span class="spinning-gear" style="font-size: 1rem;">⚙️</span></div>
+    <div class="footer-signature">El Sayeh Store 2026 | D&P Samy Luks <span class="spinning-gear" style="font-size: 0.9rem;">⚙️</span></div>
 </div>
 
 <div id="receiptPrintSection"></div>
@@ -822,7 +824,6 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    // التحقق الصارم أمنياً لرفض كلمة المرور الخطأ نهائياً
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
@@ -1060,6 +1061,7 @@
         updateLowStockAlert();
     }
 
+    // تنسيق جدول المخزون المتكيف ديناميكياً بدون سكرول خارجي
     function renderStockTableCustom(list) {
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {
@@ -1076,8 +1078,8 @@
                 <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#27ae60'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p1 || '-'}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p2 || '-'}</td>
-                <td style="font-family:monospace; font-weight:bold; color:#1e3c72;">${i.barcode || '-'}</td>
-                <td>${formatDateShort(i.expiry)}</td>
+                <td style="font-family:monospace; font-weight:bold; color:#1e3c72; font-size:0.68rem;">${i.barcode || '-'}</td>
+                <td style="font-size:0.68rem;">${formatDateShort(i.expiry)}</td>
                 <td style="color:#16a085; font-weight:bold;">${i.supplier || 'غير محدد'}</td>
                 <td>
                     <div class="action-btn-group">
@@ -1334,7 +1336,7 @@
                     <td style="font-weight:bold; color:#e74c3c;">${inv.customerName || 'غير محدد'}</td>
                     <td style="font-weight:bold;">#${inv.id}</td>
                     <td>${formatDateShort(inv.date)}</td>
-                    <td style="text-align:right; font-size:0.75rem;">${inv.itemsText || '-'}</td>
+                    <td style="text-align:right; font-size:0.72rem;">${inv.itemsText || '-'}</td>
                     <td style="font-weight:bold;">${inv.totalEGP.toFixed(2)} ج.م</td>
                     <td style="color:#27ae60;">${paid.toFixed(2)} ج.م</td>
                     <td style="color:#e74c3c; font-weight:bold;">${due.toFixed(2)} ج.م</td>
@@ -1389,12 +1391,12 @@
                     <td>${data.phone1}</td>
                     <td>${data.phone2}</td>
                     <td>${data.address}</td>
-                    <td style="font-size:0.75rem;">${data.notes}</td>
-                    <td style="text-align:right; font-size:0.75rem;">${data.productsList.length > 0 ? data.productsList.join(', ') : 'لا يوجد أصناف تابعة'}</td>
+                    <td style="font-size:0.72rem;">${data.notes}</td>
+                    <td style="text-align:right; font-size:0.72rem;">${data.productsList.length > 0 ? data.productsList.join(', ') : 'لا يوجد أصناف تابعة'}</td>
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
                     <td style="color:#27ae60; font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
                     <td>
-                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.7rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
+                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
                     </td>
                 </tr>
             `);
@@ -1488,7 +1490,7 @@
 
                 filteredItems.forEach(i => {
                     let pStr = [i.p1, i.p2].filter(x => x && x.trim() !== "").join(', ');
-                    itemsTextList.push(`• ${i.name} (العدد: ${i.qty}) - بسعر: ${i.sellTotal.toFixed(2)} ج.م [جهة: ${pStr||'الفرع الرئيسي'}]`);
+                    itemsTextList.push(`• ${i.name} (${i.qty}) - ${i.sellTotal.toFixed(2)} ج.م`);
                     invComm += i.commTotal;
                     invSell += i.sellTotal;
                     invProfit += i.netProfit;
@@ -1505,15 +1507,15 @@
                         <td>${reportRows.length + 1}</td>
                         <td style="font-weight:bold;">#${inv.id}</td>
                         <td style="font-weight:bold;">${payTypeTag}</td>
-                        <td style="white-space:nowrap; font-weight:bold; color:#1e3c72;">${formatDateShort(inv.date)}</td>
-                        <td style="text-align:right; font-size:0.75rem; line-height:1.4;">${itemsTextList.join('<br>')}</td>
+                        <td style="white-space:nowrap; font-weight:bold; color:#1e3c72; font-size:0.72rem;">${formatDateShort(inv.date)}</td>
+                        <td style="text-align:right; font-size:0.72rem; line-height:1.3;">${itemsTextList.join('<br>')}</td>
                         <td>${invComm.toFixed(2)} ج.م</td>
                         <td style="color:#27ae60; font-weight:bold;">${invSell.toFixed(2)} ج.م</td>
                         <td style="color:#8e44ad; font-weight:bold;">${invProfit.toFixed(2)} ج.م</td>
                         <td class="no-pdf">
-                            <button class="btn btn-blue" style="padding:2px 5px; font-size:0.7rem; margin:1px;" onclick="printSingleReceipt(${inv.id})">إيصال 🖨️</button>
-                            <button class="btn btn-orange" style="padding:2px 5px; font-size:0.7rem; margin:1px;" onclick="editSingleInvoice(${inv.id})">تعديل ✏️</button>
-                            <button class="btn btn-red" style="padding:2px 5px; font-size:0.7rem; margin:1px;" onclick="deleteSingleInvoice(${inv.id})">حذف 🗑️</button>
+                            <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="printSingleReceipt(${inv.id})">إيصال 🖨️</button>
+                            <button class="btn btn-orange" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="editSingleInvoice(${inv.id})">تعديل ✏️</button>
+                            <button class="btn btn-red" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="deleteSingleInvoice(${inv.id})">حذف 🗑️</button>
                         </td>
                     </tr>
                 `);

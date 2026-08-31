@@ -70,7 +70,7 @@
         th { background: #1e3c72; color: white; white-space: nowrap; }
 
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
-        .login-card { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .login-card { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 380px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         
         .pass-container { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
         .toggle-pass-btn { background: #e9ecef; border: 1px solid #ccc; padding: 9px; border-radius: 6px; cursor: pointer; font-size: 1rem; }
@@ -128,13 +128,43 @@
     </div>
 </div>
 
-<!-- واجهة طلب كود التفعيل الشهري -->
 <div id="activationOverlay" class="login-overlay" style="display:none; z-index:99999999;">
     <div class="login-card">
         <h2 style="color:#e74c3c; margin-bottom:10px; font-size:1.2rem;">🔒 انتهاء فترة الاشتراك</h2>
         <p style="font-size:0.85rem; color:#333; margin-bottom:15px;">لقد مضى شهر على استخدام النظام. يرجى أدخال كود التفعيل للشهر الجديد للفتح:</p>
         <input type="password" id="activationCodeInput" class="search-box" style="text-align:center;" placeholder="أدخل كود التفعيل...">
         <button type="button" class="btn btn-purple" onclick="verifyActivationCode()">تفعيل النظام 🔑</button>
+    </div>
+</div>
+
+<!-- نافذة إضافة وتعديل بيانات المورد -->
+<div id="supplierModal" class="login-overlay" style="display:none; z-index:999999;">
+    <div class="login-card" style="max-width:420px; text-align:right;">
+        <h3 style="color:#1e3c72; margin-bottom:12px; text-align:center;">🚚 إضافة / تعديل بيانات المورد</h3>
+        <div class="field-box" style="margin-bottom:8px;">
+            <label>اسم المورد:</label>
+            <input type="text" id="suppModalName" autocomplete="off" placeholder="اسم المورد بالكامل...">
+        </div>
+        <div class="field-box" style="margin-bottom:8px;">
+            <label>رقم الهاتف 1:</label>
+            <input type="text" id="suppModalPhone1" placeholder="رقم الهاتف الرئيسي...">
+        </div>
+        <div class="field-box" style="margin-bottom:8px;">
+            <label>رقم الهاتف 2:</label>
+            <input type="text" id="suppModalPhone2" placeholder="رقم الهاتف الإضافي...">
+        </div>
+        <div class="field-box" style="margin-bottom:8px;">
+            <label>العنوان:</label>
+            <input type="text" id="suppModalAddress" placeholder="عنوان المورد / المحافظة...">
+        </div>
+        <div class="field-box" style="margin-bottom:12px;">
+            <label>ملاحظات:</label>
+            <input type="text" id="suppModalNotes" placeholder="ملاحظات وشروط التوريد...">
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-purple" style="margin-top:0;" onclick="saveSupplierFromModal()">حفظ المورد 💾</button>
+            <button class="btn btn-red" style="margin-top:0;" onclick="closeSupplierModal()">إلغاء ❌</button>
+        </div>
     </div>
 </div>
 
@@ -178,7 +208,6 @@
             <div>رقم الفاتورة: <span id="invNum" style="color: #1e3c72; font-size: 1.2rem; font-weight: bold;">1001</span></div>
         </div>
 
-        <!-- إعدادات طريقة الدفع والخصم للبيع -->
         <div class="card" style="background:#fff8e7; border:1px solid #ffe8b3;">
             <div class="form-grid">
                 <div class="field-box">
@@ -190,7 +219,7 @@
                 </div>
                 <div class="field-box" id="customerNameBox" style="display:none;">
                     <label>اسم العميل (آجل):</label>
-                    <input type="text" id="customerNameInput" list="customersList" placeholder="اكتب اسم العميل...">
+                    <input type="text" id="customerNameInput" list="customersList" autocomplete="off" placeholder="اكتب اسم العميل...">
                     <datalist id="customersList"></datalist>
                 </div>
                 <div class="field-box">
@@ -208,7 +237,7 @@
         </div>
 
         <div style="display:flex; gap:6px; margin-top:12px;">
-            <input type="text" id="searchInput" class="search-box" style="margin-bottom:0;" placeholder="امسح الباركود لقراءة الصنف فوراً أو اكتب اسم القطعة... (F4)" oninput="searchProduct()">
+            <input type="text" id="searchInput" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="امسح الباركود لقراءة الصنف فوراً أو اكتب اسم القطعة... (F4)" oninput="searchProduct()">
             <button class="btn btn-purple" style="width:auto; margin-top:0; white-space:nowrap; padding: 0 12px;" onclick="toggleCameraScanner('sales')">📷 كاميرا الباركود (F2)</button>
         </div>
 
@@ -261,7 +290,7 @@
     <!-- 2. تفاصيل المخزون -->
     <div id="stockTab" class="tab-content manager-only">
         <div class="section-title">📦 تفاصيل المخزون والباركود والشركاء</div>
-        <input type="text" id="stockFilterInput" class="search-box" placeholder="تصفية باسم القطعة أو الباركود..." oninput="filterStockTable(this.value)">
+        <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة أو الباركود..." oninput="filterStockTable(this.value)">
 
         <div id="stockScannerContainer" class="scanner-box" style="margin-top:10px;">
             <div id="stockCameraReader" class="camera-div"></div>
@@ -282,7 +311,7 @@
         <div class="card" style="background:#eef7fe;">
             <div class="form-grid">
                 <div class="field-box"><label>اسم القطعة:</label><input type="text" id="newProdName" placeholder="اسم القطعة..."></div>
-                <div class="field-box"><label>اسم المورد:</label><input type="text" id="newProdSupplier" list="suppliersList" placeholder="اسم المورد..."></div>
+                <div class="field-box"><label>اسم المورد:</label><input type="text" id="newProdSupplier" list="suppliersList" autocomplete="off" placeholder="اسم المورد..."></div>
                 <div class="field-box"><label>المقاس:</label><input type="text" id="newProdSize" placeholder="المقاس..."></div>
                 <div class="field-box"><label>الغرض:</label><input type="text" id="newProdPurpose" placeholder="الغرض..."></div>
                 <div class="field-box"><label>السعر التجاري (ج.م):</label><input type="number" id="newProdPrice" placeholder="0.00"></div>
@@ -315,7 +344,7 @@
         <div class="section-title">📝 دفتر البيع الآجل وحسابات العملاء</div>
         <div class="card">
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
+                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
                 <div>من: <input type="date" id="creditFromDate" onchange="renderCreditReport()"></div>
                 <div>إلى: <input type="date" id="creditToDate" onchange="renderCreditReport()"></div>
             </div>
@@ -337,12 +366,16 @@
 
     <!-- 5. جدول الموردين والمشتريات -->
     <div id="suppliersTab" class="tab-content admin-only">
-        <div class="section-title">🚚 دفتر الموردين والمشتريات</div>
-        <input type="text" id="supplierFilterInput" class="search-box" placeholder="ابحث باسم المورد..." oninput="renderSuppliersReport()">
+        <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🚚 دفتر الموردين والمشتريات</span>
+            <button class="btn btn-blue" style="width:auto; margin:0; padding:6px 12px; font-size:0.8rem;" onclick="openSupplierModal()">إدارة الموردين (إضافة / تعديل) ➕</button>
+        </div>
+
+        <input type="text" id="supplierFilterInput" class="search-box" autocomplete="off" placeholder="ابحث باسم المورد أو الهاتف..." oninput="renderSuppliersReport()">
         
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم المورد</th><th>المنتجات الموردة</th><th>إجمالي القطع بالمخزن</th><th>إجمالي قيمة التكلفة التجاري</th></tr>
+                <tr><th>#</th><th>اسم المورد</th><th>هاتف 1</th><th>هاتف 2</th><th>العنوان</th><th>ملاحظات</th><th>المنتجات التابعة له</th><th>إجمالي القطع بالمخزن</th><th>إجمالي التكلفة التجاري</th><th>إجراء</th></tr>
             </thead>
             <tbody id="suppliersTableBody"></tbody>
         </table></div>
@@ -419,21 +452,20 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxdPOS5uci-oEODLHpDhiL44jBcqoAgSfYj83cnAi3o7vZlfXEKtWYKU7DvdtL_Q6uA/exec";
     
     let cloudUsers = [];
-    let currentUser = null, products = [], invoiceItems = [], savedInvoices = [], invoiceCounter = 1001, activeInvoiceId = 1001;
+    let currentUser = null, products = [], suppliers = [], invoiceItems = [], savedInvoices = [], invoiceCounter = 1001, activeInvoiceId = 1001;
     let currentNavIndex = -1;
     let scanners = { sales: null, addNew: null, stock: null };
     let activeScannerKey = null;
     let selectedProd = null;
     let selectedStockEditProduct = null;
 
-    // --- توليد وتفعيل الصوت الصوتي للصفارة ---
     function playBeepSound() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = "sine";
-            osc.frequency.value = 1200; // تردد الصفارة
+            osc.frequency.value = 1200;
             gain.gain.value = 0.1;
             osc.connect(gain);
             gain.connect(ctx.destination);
@@ -442,7 +474,6 @@
         } catch(e) {}
     }
 
-    // --- نظام الاشتراك والتفعيل الشهري ABS ---
     function checkMonthlySubscription() {
         let firstUseDate = localStorage.getItem('appFirstUseDate');
         if (!firstUseDate) {
@@ -471,6 +502,43 @@
         }
     }
 
+    function openSupplierModal(name = '', phone1 = '', phone2 = '', address = '', notes = '') {
+        document.getElementById('suppModalName').value = name;
+        document.getElementById('suppModalPhone1').value = phone1;
+        document.getElementById('suppModalPhone2').value = phone2;
+        document.getElementById('suppModalAddress').value = address;
+        document.getElementById('suppModalNotes').value = notes;
+        document.getElementById('supplierModal').style.display = 'flex';
+    }
+
+    function closeSupplierModal() {
+        document.getElementById('supplierModal').style.display = 'none';
+    }
+
+    function saveSupplierFromModal() {
+        const name = document.getElementById('suppModalName').value.trim();
+        const phone1 = document.getElementById('suppModalPhone1').value.trim();
+        const phone2 = document.getElementById('suppModalPhone2').value.trim();
+        const address = document.getElementById('suppModalAddress').value.trim();
+        const notes = document.getElementById('suppModalNotes').value.trim();
+
+        if (!name) return alert('أدخل اسم المورد أولاً!');
+
+        let suppObj = { name: name, phone1: phone1, phone2: phone2, address: address, notes: notes };
+        let idx = suppliers.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
+        if (idx !== -1) {
+            suppliers[idx] = suppObj;
+        } else {
+            suppliers.push(suppObj);
+        }
+
+        syncToCloud("saveSupplier", suppObj);
+        closeSupplierModal();
+        updateSuppliersDatalist();
+        renderSuppliersReport();
+        alert(`✅ تم حفظ بيانات المورد (${name}) بنجاح!`);
+    }
+
     function toggleCustomerNameField() {
         const pType = document.getElementById('paymentTypeSelect').value;
         document.getElementById('customerNameBox').style.display = (pType === 'credit') ? 'flex' : 'none';
@@ -489,17 +557,14 @@
     function updateSuppliersDatalist() {
         const list = document.getElementById('suppliersList');
         if (!list) return;
-        let suppliers = new Set();
-        products.forEach(p => {
-            if (p.supplier) suppliers.add(p.supplier);
-        });
-        list.innerHTML = Array.from(suppliers).map(s => `<option value="${s}">`).join('');
+        let set = new Set();
+        suppliers.forEach(s => set.add(s.name));
+        products.forEach(p => { if(p.supplier) set.add(p.supplier); });
+        list.innerHTML = Array.from(set).map(s => `<option value="${s}">`).join('');
     }
 
     function getPendingOfflineInvoices() {
-        try {
-            return JSON.parse(localStorage.getItem('pendingOfflineInvoices') || '[]');
-        } catch(e) { return []; }
+        try { return JSON.parse(localStorage.getItem('pendingOfflineInvoices') || '[]'); } catch(e) { return []; }
     }
 
     function savePendingOfflineInvoice(inv) {
@@ -514,29 +579,20 @@
 
     function togglePasswordVisibility() {
         const passInput = document.getElementById('entryPassInput');
-        if (passInput) {
-            passInput.type = (passInput.type === "password") ? "text" : "password";
-        }
+        if (passInput) passInput.type = (passInput.type === "password") ? "text" : "password";
     }
 
     function closeApp() {
-        if (window.Capacitor && window.Capacitor.App) {
-            window.Capacitor.App.exitApp();
-        } else if (navigator.app && navigator.app.exitApp) {
-            navigator.app.exitApp();
-        } else if (window.close) {
-            window.close();
-        } else {
-            document.body.innerHTML = '<div style="text-align:center; padding:50px; font-weight:bold; font-size:1.2rem; color:#1e3c72;">تم إغلاق الجلسة بنجاح. يمكنك إغلاق النافذة الآن.</div>';
-        }
+        if (window.Capacitor && window.Capacitor.App) window.Capacitor.App.exitApp();
+        else if (navigator.app && navigator.app.exitApp) navigator.app.exitApp();
+        else if (window.close) window.close();
+        else document.body.innerHTML = '<div style="text-align:center; padding:50px; font-weight:bold; font-size:1.2rem; color:#1e3c72;">تم إغلاق الجلسة بنجاح. يمكنك إغلاق النافذة الآن.</div>';
     }
 
     function formatDateShort(dateInput) {
         if (!dateInput) return "-";
         let d = new Date(dateInput);
-        if (isNaN(d.getTime())) {
-            return dateInput.toString().replace(/GMT.*/, '').trim();
-        } 
+        if (isNaN(d.getTime())) return dateInput.toString().replace(/GMT.*/, '').trim();
         let day = String(d.getDate()).padStart(2, '0');
         let month = String(d.getMonth() + 1).padStart(2, '0');
         let year = d.getFullYear();
@@ -565,9 +621,7 @@
     function updateLowStockAlert() {
         const lowStockProducts = products.filter(p => p.q <= 3);
         const countSpan = document.getElementById('lowStockCountVal');
-        if (countSpan) {
-            countSpan.textContent = `${lowStockProducts.length} قطع ناقصة`;
-        }
+        if (countSpan) countSpan.textContent = `${lowStockProducts.length} قطع ناقصة`;
     }
 
     function filterLowStock() {
@@ -597,9 +651,7 @@
         if (oldScript) oldScript.remove();
 
         var src = GOOGLE_SCRIPT_URL + "?action=" + action + "&callback=" + callbackName + "&nocache=" + Math.random();
-        if (dataObj) {
-            src += "&data=" + encodeURIComponent(JSON.stringify(dataObj));
-        }
+        if (dataObj) src += "&data=" + encodeURIComponent(JSON.stringify(dataObj));
 
         const script = document.createElement('script');
         script.id = scriptId;
@@ -612,24 +664,14 @@
 
     function syncPendingInvoicesFirst(callback) {
         let pending = getPendingOfflineInvoices();
-        if (pending.length === 0) {
-            if (callback) callback();
-            return;
-        }
+        if (pending.length === 0) { if (callback) callback(); return; }
 
         const ind = document.getElementById('syncIndicator');
         if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🟡 جاري رفع فواتير الأوفلاين للسيرفر...'; }
 
-        let count = 0;
-        pending.forEach(inv => {
-            jsonpRequest("saveInvoice", inv, "handleSaveCallback");
-            count++;
-        });
-
+        pending.forEach(inv => jsonpRequest("saveInvoice", inv, "handleSaveCallback"));
         clearPendingOfflineInvoices();
-        setTimeout(() => {
-            if (callback) callback();
-        }, 1500);
+        setTimeout(() => { if (callback) callback(); }, 1500);
     }
 
     function fetchCloudData() {
@@ -637,12 +679,9 @@
             window.handleCloudInvoicesResponse = function(resData) {
                 const ind = document.getElementById('syncIndicator');
                 if (resData && resData.status === "success") {
-                    if (resData.users && resData.users.length > 0) {
-                        cloudUsers = resData.users;
-                        populateUsersDropdown();
-                        populateLoginUsersSelect();
-                    }
+                    if (resData.users) { cloudUsers = resData.users; populateUsersDropdown(); populateLoginUsersSelect(); }
                     if (resData.products) products = resData.products;
+                    if (resData.suppliers) suppliers = resData.suppliers;
 
                     if (resData.invoices) {
                         let cloudInvMap = new Map();
@@ -673,9 +712,7 @@
         const select = document.getElementById('entryUserSelect');
         if (!select || !cloudUsers || cloudUsers.length === 0) return;
         select.innerHTML = '';
-        cloudUsers.forEach(u => {
-            select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username}</option>`;
-        });
+        cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username}</option>`);
     }
 
     function syncToCloud(actionType, dataObj) {
@@ -684,7 +721,6 @@
             if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 تم الحفظ بنجاح أونلاين'; }
             updateLowStockAlert();
         };
-
         jsonpRequest(actionType, dataObj, "handleSaveCallback");
     }
 
@@ -692,9 +728,7 @@
         const select = document.getElementById('userSelectPass');
         if (!select) return;
         select.innerHTML = '';
-        cloudUsers.forEach(u => {
-            select.innerHTML += `<option value="${u.username}">${u.username}</option>`;
-        });
+        cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
     function validateEntryPassword() {
@@ -704,21 +738,12 @@
         const userInput = userSelect ? userSelect.value.trim().toLowerCase() : 'admin';
         const passVal = passInput ? passInput.value.trim() : '';
 
-        if (!passVal) {
-            return alert('برجاء إدخال كلمة المرور!');
-        }
-
-        if (document.activeElement) {
-            document.activeElement.blur();
-        }
+        if (!passVal) return alert('برجاء إدخال كلمة المرور!');
+        if (document.activeElement) document.activeElement.blur();
 
         let matched = null;
-
         if (cloudUsers && cloudUsers.length > 0) {
-            matched = cloudUsers.find(u => 
-                u.username.toString().trim().toLowerCase() === userInput && 
-                u.password.toString().trim() === passVal
-            );
+            matched = cloudUsers.find(u => u.username.toString().trim().toLowerCase() === userInput && u.password.toString().trim() === passVal);
         }
 
         if (!matched) {
@@ -728,14 +753,11 @@
         }
 
         currentUser = matched;
-
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainContainer').style.display = 'block';
         
         const greeting = document.getElementById('userGreeting');
-        if (greeting) {
-            greeting.textContent = `👤 المستخدم: ${matched.username.toUpperCase()} (${matched.role || 'مستخدم'})`;
-        }
+        if (greeting) greeting.textContent = `👤 المستخدم: ${matched.username.toUpperCase()} (${matched.role || 'مستخدم'})`;
 
         applyRolePermissions();
         prepareNewInvoice();
@@ -766,7 +788,7 @@
             if (p.p2 && p.p2.trim() !== "") partners.add(p.p2.trim());
         });
         select.innerHTML = '<option value="ALL">الكل (الفرع الرئيسي + جميع الشركاء)</option><option value="MAIN">الفرع الرئيسي فقط (بدون شركاء)</option>';
-        partners.forEach(pt => { select.innerHTML += `<option value="${pt}">تقرير الشريك: ${pt}</option>`; });
+        partners.forEach(pt => select.innerHTML += `<option value="${pt}">تقرير الشريك: ${pt}</option>`);
     }
 
     function toggleCameraScanner(key) {
@@ -794,10 +816,7 @@
     function stopCameraScanner(key) {
         let containerId = key + 'ScannerContainer';
         if (scanners[key] && activeScannerKey === key) {
-            scanners[key].stop().then(() => {
-                activeScannerKey = null;
-                document.getElementById(containerId).style.display = 'none';
-            }).catch(() => document.getElementById(containerId).style.display = 'none');
+            scanners[key].stop().then(() => { activeScannerKey = null; document.getElementById(containerId).style.display = 'none'; }).catch(() => document.getElementById(containerId).style.display = 'none');
         } else {
             document.getElementById(containerId).style.display = 'none';
         }
@@ -808,8 +827,7 @@
     }
 
     function onBarcodeScanned(key, decodedText) {
-        playBeepSound(); // تشغيل صوت الصفارة عند قراءة الباركود
-
+        playBeepSound();
         const barcodeQuery = decodedText.trim();
         if (key === 'sales') {
             document.getElementById('searchInput').value = barcodeQuery;
@@ -1003,9 +1021,7 @@
             document.getElementById('invNum').textContent = inv.id;
             
             let isoDate = parseFormattedDateToISO(inv.date);
-            if (isoDate) {
-                document.getElementById('invoiceDate').value = isoDate;
-            }
+            if (isoDate) document.getElementById('invoiceDate').value = isoDate;
 
             document.getElementById('invoiceDiscountPercent').value = inv.discountPercent || 0;
             document.getElementById('paymentTypeSelect').value = inv.paymentType || 'cash';
@@ -1174,9 +1190,7 @@
 
     function saveAndPrintInvoice() {
         let invId = saveInvoice();
-        if (invId) {
-            printSingleReceipt(invId);
-        }
+        if (invId) printSingleReceipt(invId);
     }
 
     function renderCreditReport() {
@@ -1222,16 +1236,27 @@
         const query = document.getElementById('supplierFilterInput').value.trim().toLowerCase();
         const tbody = document.getElementById('suppliersTableBody');
 
-        let suppliersMap = new Map();
+        let mergedMap = new Map();
+
+        suppliers.forEach(s => {
+            if (!query || s.name.toLowerCase().includes(query) || (s.phone1 && s.phone1.includes(query))) {
+                mergedMap.set(s.name, {
+                    phone1: s.phone1 || '-', phone2: s.phone2 || '-',
+                    address: s.address || '-', notes: s.notes || '-',
+                    productsList: [], totalQty: 0, totalCost: 0
+                });
+            }
+        });
 
         products.forEach(p => {
-            let supp = p.supplier && p.supplier.trim() !== "" ? p.supplier.trim() : "موردين عامين";
+            let supp = p.supplier && p.supplier.trim() !== "" ? p.supplier.trim() : "مورد عام";
             if (query && !supp.toLowerCase().includes(query)) return;
 
-            if (!suppliersMap.has(supp)) {
-                suppliersMap.set(supp, { productsList: [], totalQty: 0, totalCost: 0 });
+            if (!mergedMap.has(supp)) {
+                mergedMap.set(supp, { phone1: '-', phone2: '-', address: '-', notes: '-', productsList: [], totalQty: 0, totalCost: 0 });
             }
-            let data = suppliersMap.get(supp);
+
+            let data = mergedMap.get(supp);
             data.productsList.push(p.n);
             data.totalQty += p.q;
             data.totalCost += (p.p * p.q);
@@ -1239,19 +1264,26 @@
 
         let rows = [];
         let index = 1;
-        suppliersMap.forEach((data, suppName) => {
+        mergedMap.forEach((data, suppName) => {
             rows.push(`
                 <tr>
                     <td>${index++}</td>
                     <td style="font-weight:bold; color:#16a085;">${suppName}</td>
-                    <td style="text-align:right; font-size:0.75rem;">${data.productsList.join(', ')}</td>
+                    <td>${data.phone1}</td>
+                    <td>${data.phone2}</td>
+                    <td>${data.address}</td>
+                    <td style="font-size:0.75rem;">${data.notes}</td>
+                    <td style="text-align:right; font-size:0.75rem;">${data.productsList.length > 0 ? data.productsList.join(', ') : 'لا يوجد أصناف تابعة'}</td>
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
                     <td style="color:#27ae60; font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
+                    <td>
+                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.7rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
+                    </td>
                 </tr>
             `);
         });
 
-        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="5">لا توجد بيانات موردين مطابقة</td></tr>';
+        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="10">لا توجد بيانات موردين مطابقة</td></tr>';
         else tbody.innerHTML = rows.join('');
     }
 
@@ -1265,9 +1297,7 @@
             document.getElementById('invNum').textContent = inv.id;
             
             let isoDate = parseFormattedDateToISO(inv.date);
-            if (isoDate) {
-                document.getElementById('invoiceDate').value = isoDate;
-            }
+            if (isoDate) document.getElementById('invoiceDate').value = isoDate;
 
             document.getElementById('invoiceDiscountPercent').value = inv.discountPercent || 0;
             document.getElementById('paymentTypeSelect').value = inv.paymentType || 'cash';

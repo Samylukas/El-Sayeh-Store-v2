@@ -64,7 +64,7 @@
         .nav-controls { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
         .nav-controls .btn { width: auto; font-size: 0.8rem; padding: 6px 12px; margin-top: 0; }
 
-        /* --- تحسين الاستجابة والتجاوب الديناميكي للجداول --- */
+        /* الجداول المرنة الديناميكية السلسة */
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; border-radius: 6px; }
         table { width: 100%; border-collapse: collapse; background: #fff; }
         th, td { padding: 8px 6px; border: 1px solid #ddd; text-align: center; font-size: 0.8rem; word-break: break-word; vertical-align: middle; }
@@ -311,7 +311,7 @@
         </div>
     </div>
 
-    <!-- 2. تفاصيل المخزون الديناميكي المتجاوب -->
+    <!-- 2. تفاصيل المخزون الديناميكي -->
     <div id="stockTab" class="tab-content manager-only">
         <div class="section-title">📦 تفاصيل المخزون والباركود والشركاء</div>
         <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة أو الباركود..." oninput="filterStockTable(this.value)">
@@ -822,6 +822,7 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
+    // التحقق الصارم أمنياً لرفض كلمة المرور الخطأ نهائياً
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
@@ -834,13 +835,14 @@
 
         let matched = null;
         if (cloudUsers && cloudUsers.length > 0) {
-            matched = cloudUsers.find(u => u.username.toString().trim().toLowerCase() === userInput && u.password.toString().trim() === passVal);
+            matched = cloudUsers.find(u => 
+                u.username.toString().trim().toLowerCase() === userInput && 
+                u.password.toString().trim() === passVal
+            );
         }
 
         if (!matched) {
-            let userRole = 'User';
-            if (userInput === 'admin' || userInput.includes('admin')) userRole = 'Admin';
-            matched = { username: userInput, password: passVal, role: userRole };
+            return alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
         }
 
         currentUser = matched;
@@ -1058,7 +1060,6 @@
         updateLowStockAlert();
     }
 
-    // تنسيق جدول المخزون الديناميكي المتفاعل بأسلوب زر الأوامر المرنة أفقياً
     function renderStockTableCustom(list) {
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {

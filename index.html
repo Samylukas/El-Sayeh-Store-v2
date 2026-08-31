@@ -97,10 +97,6 @@
 </head>
 <body>
 
-<audio id="barcodeBeepSound" preload="auto">
-    <source src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" type="audio/mpeg">
-</audio>
-
 <div id="loginOverlay" class="login-overlay">
     <div class="login-card">
         <h2 style="color:#1e3c72; margin-bottom:10px; font-size:1.2rem;"><span class="spinning-gear">⚙️</span> El Sayeh Store</h2>
@@ -132,6 +128,16 @@
     </div>
 </div>
 
+<!-- واجهة طلب كود التفعيل الشهري -->
+<div id="activationOverlay" class="login-overlay" style="display:none; z-index:99999999;">
+    <div class="login-card">
+        <h2 style="color:#e74c3c; margin-bottom:10px; font-size:1.2rem;">🔒 انتهاء فترة الاشتراك</h2>
+        <p style="font-size:0.85rem; color:#333; margin-bottom:15px;">لقد مضى شهر على استخدام النظام. يرجى أدخال كود التفعيل للشهر الجديد للفتح:</p>
+        <input type="password" id="activationCodeInput" class="search-box" style="text-align:center;" placeholder="أدخل كود التفعيل...">
+        <button type="button" class="btn btn-purple" onclick="verifyActivationCode()">تفعيل النظام 🔑</button>
+    </div>
+</div>
+
 <div class="app-container" id="mainContainer" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:6px; margin-bottom:8px;">
         <span id="userGreeting" style="font-weight:bold; color:#1e3c72; font-size:0.85rem;">👤 المستخدم: -</span>
@@ -150,6 +156,8 @@
         <button class="tab-btn active" id="btnSalesTab" onclick="showTab('salesTab', event)">🛒 المبيعات والفواتير</button>
         <button class="tab-btn manager-only" id="btnStockTab" onclick="showTab('stockTab', event)">📦 تفاصيل المخزون</button>
         <button class="tab-btn manager-only" id="btnAddStockTab" onclick="showTab('addStockTab', event)">➕ إضافة أصناف ومخزون</button>
+        <button class="tab-btn admin-only" id="btnCreditTab" onclick="showTab('creditTab', event)">📝 آجل العملاء</button>
+        <button class="tab-btn admin-only" id="btnSuppliersTab" onclick="showTab('suppliersTab', event)">🚚 الموردين والمشتريات</button>
         <button class="tab-btn admin-only" id="btnFinanceTab" onclick="showTab('financeTab', event)">💵 المصروفات والإيرادات</button>
         <button class="tab-btn admin-only" id="btnReportsTab" onclick="showTab('reportsTab', event)">📊 التقارير وتقارير الشركاء</button>
         <button class="tab-btn admin-only" id="btnUsersTab" onclick="showTab('usersTab', event)">🔑 الحسابات والأمان</button>
@@ -168,6 +176,28 @@
         <div class="info-row" style="background: #eef7fe; padding: 10px; border-radius: 6px; align-items: center;">
             <div>تاريخ الفاتورة: <input type="datetime-local" id="invoiceDate" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc;"></div>
             <div>رقم الفاتورة: <span id="invNum" style="color: #1e3c72; font-size: 1.2rem; font-weight: bold;">1001</span></div>
+        </div>
+
+        <!-- إعدادات طريقة الدفع والخصم للبيع -->
+        <div class="card" style="background:#fff8e7; border:1px solid #ffe8b3;">
+            <div class="form-grid">
+                <div class="field-box">
+                    <label>طريقة الدفع:</label>
+                    <select id="paymentTypeSelect" onchange="toggleCustomerNameField()">
+                        <option value="cash">نقدي (كاش) 💵</option>
+                        <option value="credit">آجل (على الحساب) 📝</option>
+                    </select>
+                </div>
+                <div class="field-box" id="customerNameBox" style="display:none;">
+                    <label>اسم العميل (آجل):</label>
+                    <input type="text" id="customerNameInput" list="customersList" placeholder="اكتب اسم العميل...">
+                    <datalist id="customersList"></datalist>
+                </div>
+                <div class="field-box">
+                    <label>خصم نسبة مئوية (%):</label>
+                    <input type="number" id="invoiceDiscountPercent" value="0" min="0" max="100" placeholder="0" oninput="renderInvoice()">
+                </div>
+            </div>
         </div>
 
         <div class="nav-controls">
@@ -215,9 +245,10 @@
         </table></div>
 
         <div class="totals-box" style="margin-top:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:1.1rem;">
-                <span>إجمالي الفاتورة (بالجنيه المصري):</span>
-                <span id="liveTotalEGP" style="color:#f1c40f; font-weight:bold; font-size:1.3rem;">0.00 ج.م</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; flex-wrap:wrap; gap:10px;">
+                <div>قبل الخصم: <span id="subTotalEGP" style="color:#fff;">0.00 ج.م</span></div>
+                <div>قيمة الخصم: <span id="discountValEGP" style="color:#e74c3c;">0.00 ج.م</span></div>
+                <div>صافي الفاتورة: <span id="liveTotalEGP" style="color:#f1c40f; font-weight:bold; font-size:1.3rem;">0.00 ج.م</span></div>
             </div>
         </div>
 
@@ -239,7 +270,7 @@
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>الكمية</th><th>التكلفة التجاري</th><th>سعر البيع</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th style="width:280px;">إجراءات وخيارات</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>الكمية</th><th>التكلفة التجاري</th><th>سعر البيع</th><th>المورد</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th style="width:280px;">إجراءات وخيارات</th></tr>
             </thead>
             <tbody id="stockTableBody"></tbody>
         </table></div>
@@ -251,6 +282,7 @@
         <div class="card" style="background:#eef7fe;">
             <div class="form-grid">
                 <div class="field-box"><label>اسم القطعة:</label><input type="text" id="newProdName" placeholder="اسم القطعة..."></div>
+                <div class="field-box"><label>اسم المورد:</label><input type="text" id="newProdSupplier" list="suppliersList" placeholder="اسم المورد..."></div>
                 <div class="field-box"><label>المقاس:</label><input type="text" id="newProdSize" placeholder="المقاس..."></div>
                 <div class="field-box"><label>الغرض:</label><input type="text" id="newProdPurpose" placeholder="الغرض..."></div>
                 <div class="field-box"><label>السعر التجاري (ج.م):</label><input type="number" id="newProdPrice" placeholder="0.00"></div>
@@ -267,6 +299,7 @@
                     </div>
                 </div>
             </div>
+            <datalist id="suppliersList"></datalist>
 
             <div id="addNewScannerContainer" class="scanner-box" style="margin-top:10px;">
                 <div id="addNewCameraReader" class="camera-div"></div>
@@ -277,7 +310,45 @@
         </div>
     </div>
 
-    <!-- 4. التقارير وتفصيل المبيعات -->
+    <!-- 4. آجل العملاء -->
+    <div id="creditTab" class="tab-content admin-only">
+        <div class="section-title">📝 دفتر البيع الآجل وحسابات العملاء</div>
+        <div class="card">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
+                <div>من: <input type="date" id="creditFromDate" onchange="renderCreditReport()"></div>
+                <div>إلى: <input type="date" id="creditToDate" onchange="renderCreditReport()"></div>
+            </div>
+        </div>
+
+        <div id="creditSummaryBox" class="totals-box" style="background:#2c3e50; margin-bottom:12px;">
+            <div class="totals-grid">
+                <div class="total-item">إجمالي الديون المعروضة <span id="creditTotalAmountVal" style="color:#e74c3c;">0.00 ج.م</span></div>
+            </div>
+        </div>
+
+        <div class="table-responsive"><table>
+            <thead>
+                <tr><th>#</th><th>اسم العميل</th><th>رقم الفاتورة</th><th>التاريخ</th><th>الأصناف المباعة</th><th>إجمالي الفاتورة</th><th>البائع</th></tr>
+            </thead>
+            <tbody id="creditTableBody"></tbody>
+        </table></div>
+    </div>
+
+    <!-- 5. جدول الموردين والمشتريات -->
+    <div id="suppliersTab" class="tab-content admin-only">
+        <div class="section-title">🚚 دفتر الموردين والمشتريات</div>
+        <input type="text" id="supplierFilterInput" class="search-box" placeholder="ابحث باسم المورد..." oninput="renderSuppliersReport()">
+        
+        <div class="table-responsive"><table>
+            <thead>
+                <tr><th>#</th><th>اسم المورد</th><th>المنتجات الموردة</th><th>إجمالي القطع بالمخزن</th><th>إجمالي قيمة التكلفة التجاري</th></tr>
+            </thead>
+            <tbody id="suppliersTableBody"></tbody>
+        </table></div>
+    </div>
+
+    <!-- 6. التقارير وتفصيل المبيعات -->
     <div id="reportsTab" class="tab-content admin-only">
         <div class="section-title">📊 تقارير المبيعات وتفصيل أرباح الشركاء والفرع الرئيسي</div>
         <div class="card">
@@ -307,7 +378,7 @@
 
             <div class="table-responsive"><table>
                 <thead>
-                    <tr><th>#</th><th>رقم الفاتورة</th><th>التاريخ والوقت</th><th>تفاصيل الأصناف والشركاء</th><th>التكلفة</th><th>إجمالي البيع</th><th>صافي الربح</th><th class="no-pdf" style="width:180px;">خيارات وإجراءات</th></tr>
+                    <tr><th>#</th><th>رقم الفاتورة</th><th>نوع الدفع / العميل</th><th>التاريخ والوقت</th><th>تفاصيل الأصناف والشركاء</th><th>التكلفة</th><th>إجمالي البيع</th><th>صافي الربح</th><th class="no-pdf" style="width:180px;">خيارات وإجراءات</th></tr>
                 </thead>
                 <tbody id="savedInvoicesBody"></tbody>
             </table></div>
@@ -315,7 +386,7 @@
         </div>
     </div>
 
-    <!-- 5. المالية والمصروفات -->
+    <!-- 7. المالية والمصروفات -->
     <div id="financeTab" class="tab-content admin-only">
         <div class="section-title">💵 المصروفات والإيرادات (بالجنيه المصري)</div>
         <div class="card">
@@ -329,7 +400,7 @@
         </div>
     </div>
 
-    <!-- 6. الأمان والكلمات السرية -->
+    <!-- 8. الأمان والكلمات السرية -->
     <div id="usersTab" class="tab-content admin-only">
         <div class="section-title">🔑 إدارة الحسابات وتغيير كلمة المرور</div>
         <div class="card" style="max-width:350px; margin:0 auto;">
@@ -355,7 +426,76 @@
     let selectedProd = null;
     let selectedStockEditProduct = null;
 
-    // استرجاع الفواتير المحلية غير المرفوعة
+    // --- توليد وتفعيل الصوت الصوتي للصفارة ---
+    function playBeepSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.value = 1200; // تردد الصفارة
+            gain.gain.value = 0.1;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.12);
+        } catch(e) {}
+    }
+
+    // --- نظام الاشتراك والتفعيل الشهري ABS ---
+    function checkMonthlySubscription() {
+        let firstUseDate = localStorage.getItem('appFirstUseDate');
+        if (!firstUseDate) {
+            firstUseDate = new Date().toISOString();
+            localStorage.setItem('appFirstUseDate', firstUseDate);
+            localStorage.setItem('appLastActivatedDate', firstUseDate);
+        }
+
+        let lastActive = new Date(localStorage.getItem('appLastActivatedDate') || firstUseDate);
+        let now = new Date();
+        let diffDays = Math.floor((now - lastActive) / (1000 * 60 * 60 * 24));
+
+        if (diffDays >= 30) {
+            document.getElementById('activationOverlay').style.display = 'flex';
+        }
+    }
+
+    function verifyActivationCode() {
+        const code = document.getElementById('activationCodeInput').value.trim();
+        if (code === 'ABS') {
+            localStorage.setItem('appLastActivatedDate', new Date().toISOString());
+            document.getElementById('activationOverlay').style.display = 'none';
+            alert('✅ تم تفعيل الاشتراك للشهر الجديد بنجاح!');
+        } else {
+            alert('❌ كود التفعيل غير صحيح!');
+        }
+    }
+
+    function toggleCustomerNameField() {
+        const pType = document.getElementById('paymentTypeSelect').value;
+        document.getElementById('customerNameBox').style.display = (pType === 'credit') ? 'flex' : 'none';
+    }
+
+    function updateCustomersDatalist() {
+        const list = document.getElementById('customersList');
+        if (!list) return;
+        let customers = new Set();
+        savedInvoices.forEach(i => {
+            if (i.customerName) customers.add(i.customerName);
+        });
+        list.innerHTML = Array.from(customers).map(c => `<option value="${c}">`).join('');
+    }
+
+    function updateSuppliersDatalist() {
+        const list = document.getElementById('suppliersList');
+        if (!list) return;
+        let suppliers = new Set();
+        products.forEach(p => {
+            if (p.supplier) suppliers.add(p.supplier);
+        });
+        list.innerHTML = Array.from(suppliers).map(s => `<option value="${s}">`).join('');
+    }
+
     function getPendingOfflineInvoices() {
         try {
             return JSON.parse(localStorage.getItem('pendingOfflineInvoices') || '[]');
@@ -437,6 +577,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+        checkMonthlySubscription();
         fetchCloudData();
 
         window.addEventListener('keydown', (e) => {
@@ -479,7 +620,6 @@
         const ind = document.getElementById('syncIndicator');
         if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🟡 جاري رفع فواتير الأوفلاين للسيرفر...'; }
 
-        // رفع الفواتير المعلقة واحداً تلو الآخر
         let count = 0;
         pending.forEach(inv => {
             jsonpRequest("saveInvoice", inv, "handleSaveCallback");
@@ -493,7 +633,6 @@
     }
 
     function fetchCloudData() {
-        // رفع أي فواتير أوفلاين مخزنة أولاً لمنع مسحها
         syncPendingInvoicesFirst(() => {
             window.handleCloudInvoicesResponse = function(resData) {
                 const ind = document.getElementById('syncIndicator');
@@ -505,7 +644,6 @@
                     }
                     if (resData.products) products = resData.products;
 
-                    // الدمج الذكي للفواتير: عدم التضحية بالفواتير المحفوظة محلياً
                     if (resData.invoices) {
                         let cloudInvMap = new Map();
                         resData.invoices.forEach(i => cloudInvMap.set(i.id, i));
@@ -521,6 +659,8 @@
                     renderStockTable();
                     updateLowStockAlert();
                     populatePartnerDropdown();
+                    updateCustomersDatalist();
+                    updateSuppliersDatalist();
                     if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
                 }
             };
@@ -668,11 +808,7 @@
     }
 
     function onBarcodeScanned(key, decodedText) {
-        const sound = document.getElementById('barcodeBeepSound');
-        if (sound) {
-            sound.currentTime = 0;
-            sound.play().catch(e => console.log("تنبيه الصوت يتطلب تفاعل مع الصفحة أولاً"));
-        }
+        playBeepSound(); // تشغيل صوت الصفارة عند قراءة الباركود
 
         const barcodeQuery = decodedText.trim();
         if (key === 'sales') {
@@ -718,6 +854,7 @@
 
         const newName = prompt("اسم القطعة:", prod.n);
         if (!newName) return;
+        const newSupplier = prompt("اسم المورد:", prod.supplier || "");
         const newSize = prompt("المقاس:", prod.size || "");
         const newPurpose = prompt("الغرض:", prod.purpose || "");
         const newP = parseFloat(prompt("السعر التجاري (ج.م):", prod.p)) || prod.p;
@@ -726,7 +863,7 @@
         const newP1 = prompt("اسم شريك 1:", prod.p1 || "");
         const newP2 = prompt("اسم شريك 2:", prod.p2 || "");
 
-        prod.n = newName; prod.size = newSize; prod.purpose = newPurpose;
+        prod.n = newName; prod.supplier = newSupplier; prod.size = newSize; prod.purpose = newPurpose;
         prod.p = newP; prod.sp = newSp; prod.q = newQ;
         prod.p1 = newP1; prod.p2 = newP2;
 
@@ -751,6 +888,7 @@
 
     function addNewProductToSystem() {
         const name = document.getElementById('newProdName').value.trim();
+        const supplier = document.getElementById('newProdSupplier').value.trim();
         const size = document.getElementById('newProdSize').value.trim();
         const purpose = document.getElementById('newProdPurpose').value.trim();
         const price = parseFloat(document.getElementById('newProdPrice').value) || 0;
@@ -764,7 +902,7 @@
         if (!name) return alert('أدخل اسم الصنف أولاً!');
         if (!barcode) barcode = "2026" + Math.floor(1000 + Math.random() * 9000);
 
-        let prodObj = { n: name, size: size, purpose: purpose, p: price, sp: sellPrice, q: qty, p1: p1, p2: p2, barcode: barcode, expiry: formatDateShort(expiry) };
+        let prodObj = { n: name, supplier: supplier, size: size, purpose: purpose, p: price, sp: sellPrice, q: qty, p1: p1, p2: p2, barcode: barcode, expiry: formatDateShort(expiry) };
         products.push(prodObj);
 
         syncToCloud("updateSingleProduct", prodObj);
@@ -772,6 +910,7 @@
         alert(`✅ تم حفظ الصنف (${name}) بنجاح!`);
         
         document.getElementById('newProdName').value = '';
+        document.getElementById('newProdSupplier').value = '';
         document.getElementById('newProdSize').value = '';
         document.getElementById('newProdPurpose').value = '';
         document.getElementById('newProdPrice').value = '';
@@ -783,6 +922,7 @@
 
         renderStockTable();
         populatePartnerDropdown();
+        updateSuppliersDatalist();
         updateLowStockAlert();
     }
 
@@ -800,6 +940,7 @@
                 <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#27ae60'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
                 <td>${i.p.toFixed(2)}</td>
                 <td style="color:#27ae60; font-weight:bold;">${i.sp.toFixed(2)}</td>
+                <td style="color:#16a085; font-weight:bold;">${i.supplier || 'غير محدد'}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p1 || '-'}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p2 || '-'}</td>
                 <td style="font-family:monospace; font-weight:bold; color:#1e3c72;">${i.barcode || '-'}</td>
@@ -834,6 +975,10 @@
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('invoiceDate').value = now.toISOString().slice(0, 16);
+        document.getElementById('invoiceDiscountPercent').value = 0;
+        document.getElementById('paymentTypeSelect').value = 'cash';
+        document.getElementById('customerNameInput').value = '';
+        toggleCustomerNameField();
         invoiceItems = [];
         renderInvoice();
     }
@@ -862,6 +1007,11 @@
                 document.getElementById('invoiceDate').value = isoDate;
             }
 
+            document.getElementById('invoiceDiscountPercent').value = inv.discountPercent || 0;
+            document.getElementById('paymentTypeSelect').value = inv.paymentType || 'cash';
+            document.getElementById('customerNameInput').value = inv.customerName || '';
+            toggleCustomerNameField();
+
             invoiceItems = inv.items ? JSON.parse(JSON.stringify(inv.items)) : [];
             renderInvoice();
         }
@@ -874,6 +1024,7 @@
         
         const barcodeMatched = products.find(item => item && item.barcode && item.barcode.toString().toLowerCase().trim() === query);
         if (barcodeMatched) {
+            playBeepSound();
             pickProductIndex(products.indexOf(barcodeMatched));
             list.style.display = 'none';
             return;
@@ -938,17 +1089,24 @@
 
     function renderInvoice() {
         const tbody = document.getElementById('invoiceTableBody');
-        let totalSellEGP = 0;
+        let subTotalEGP = 0;
         if (invoiceItems.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9">لم يتم إضافة أصناف بعد</td></tr>';
         } else {
             tbody.innerHTML = invoiceItems.map((item, index) => {
-                totalSellEGP += item.sellTotal;
+                subTotalEGP += item.sellTotal;
                 let pStr = [item.p1, item.p2].filter(x => x && x.trim() !== "").join(', ');
                 return `<tr><td>${index + 1}</td><td style="font-weight:bold;">${item.name}</td><td>${pStr || 'الفرع الرئيسي'}</td><td>${item.qty}</td><td>${item.commUnitPrice.toFixed(2)}</td><td>${item.sellUnitPrice.toFixed(2)}</td><td style="color:#27ae60; font-weight:bold;">${item.sellTotal.toFixed(2)}</td><td>${item.seller}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem; margin:0;" onclick="removeInvoiceItem(${index})">حذف</button></td></tr>`;
             }).join('');
         }
-        document.getElementById('liveTotalEGP').textContent = totalSellEGP.toFixed(2) + ' ج.م';
+
+        const discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0;
+        const discValue = (subTotalEGP * discPercent) / 100;
+        const finalNetEGP = subTotalEGP - discValue;
+
+        document.getElementById('subTotalEGP').textContent = subTotalEGP.toFixed(2) + ' ج.م';
+        document.getElementById('discountValEGP').textContent = discValue.toFixed(2) + ' ج.م';
+        document.getElementById('liveTotalEGP').textContent = finalNetEGP.toFixed(2) + ' ج.م';
     }
 
     function removeInvoiceItem(index) {
@@ -964,23 +1122,36 @@
 
     function saveInvoice() {
         if (invoiceItems.length === 0) return alert('الرجاء إضافة أصناف للفاتورة أولاً!');
+        
+        const pType = document.getElementById('paymentTypeSelect').value;
+        const custName = document.getElementById('customerNameInput').value.trim();
+
+        if (pType === 'credit' && !custName) {
+            return alert('⚠️ عند اختيار الدفع الآجل، يجب كتابة اسم العميل!');
+        }
+
         let rawDate = document.getElementById('invoiceDate').value;
         let formattedDate = formatDateShort(rawDate || new Date());
+        let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0;
 
-        let totalSell = 0, totalComm = 0, totalProfit = 0;
+        let totalSellRaw = 0, totalComm = 0;
         let itemsSummaryText = [];
         invoiceItems.forEach(i => {
-            totalSell += i.sellTotal;
+            totalSellRaw += i.sellTotal;
             totalComm += i.commTotal;
-            totalProfit += i.netProfit;
             itemsSummaryText.push(`${i.name} | عدد: ${i.qty} | سعر: ${i.sellUnitPrice}`);
         });
+
+        let discValue = (totalSellRaw * discPercent) / 100;
+        let finalTotalSell = totalSellRaw - discValue;
+        let netProfit = finalTotalSell - totalComm;
 
         const savedInv = {
             id: activeInvoiceId, date: formattedDate,
             items: JSON.parse(JSON.stringify(invoiceItems)),
             itemsText: itemsSummaryText.join(" | "),
-            totalComm: totalComm, totalEGP: totalSell, netProfit: totalProfit
+            totalComm: totalComm, totalEGP: finalTotalSell, netProfit: netProfit,
+            paymentType: pType, customerName: custName, discountPercent: discPercent
         };
 
         const existingIdx = savedInvoices.findIndex(i => i.id === activeInvoiceId);
@@ -991,13 +1162,11 @@
             if (activeInvoiceId >= invoiceCounter) invoiceCounter = activeInvoiceId + 1;
         }
 
-        // الحفظ المحلي الاحتياطي للأوفلاين
         savePendingOfflineInvoice(savedInv);
-
-        // محاولة المزامنة أونلاين
         syncToCloud("saveInvoice", savedInv);
 
-        alert(`✅ تم حفظ الفاتورة رقم #${savedInv.id} بنجاح!`);
+        alert(`✅ تم حفظ الفاتورة رقم #${savedInv.id} [${pType === 'credit' ? 'آجل للعميل: ' + custName : 'نقدي'}] بنجاح!`);
+        updateCustomersDatalist();
         prepareNewInvoice();
         generateReport();
         return savedInv.id;
@@ -1008,6 +1177,82 @@
         if (invId) {
             printSingleReceipt(invId);
         }
+    }
+
+    function renderCreditReport() {
+        const queryName = document.getElementById('creditSearchCustomer').value.trim().toLowerCase();
+        const fromD = document.getElementById('creditFromDate').value;
+        const toD = document.getElementById('creditToDate').value;
+
+        const tbody = document.getElementById('creditTableBody');
+        let creditInvoices = savedInvoices.filter(i => i.paymentType === 'credit');
+
+        let totalCredit = 0;
+        let rows = [];
+
+        creditInvoices.forEach(inv => {
+            if (queryName && (!inv.customerName || !inv.customerName.toLowerCase().includes(queryName))) return;
+            if (inv.date) {
+                const invD = inv.date.slice(0, 10);
+                if (fromD && invD < fromD) return;
+                if (toD && invD > toD) return;
+            }
+
+            totalCredit += inv.totalEGP;
+            rows.push(`
+                <tr>
+                    <td>${rows.length + 1}</td>
+                    <td style="font-weight:bold; color:#e74c3c;">${inv.customerName || 'غير محدد'}</td>
+                    <td style="font-weight:bold;">#${inv.id}</td>
+                    <td>${formatDateShort(inv.date)}</td>
+                    <td style="text-align:right; font-size:0.75rem;">${inv.itemsText || '-'}</td>
+                    <td style="color:#27ae60; font-weight:bold;">${inv.totalEGP.toFixed(2)} ج.م</td>
+                    <td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
+                </tr>
+            `);
+        });
+
+        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="7">لا توجد ديون معروضة مطابقة للبحث</td></tr>';
+        else tbody.innerHTML = rows.join('');
+
+        document.getElementById('creditTotalAmountVal').textContent = totalCredit.toFixed(2) + ' ج.م';
+    }
+
+    function renderSuppliersReport() {
+        const query = document.getElementById('supplierFilterInput').value.trim().toLowerCase();
+        const tbody = document.getElementById('suppliersTableBody');
+
+        let suppliersMap = new Map();
+
+        products.forEach(p => {
+            let supp = p.supplier && p.supplier.trim() !== "" ? p.supplier.trim() : "موردين عامين";
+            if (query && !supp.toLowerCase().includes(query)) return;
+
+            if (!suppliersMap.has(supp)) {
+                suppliersMap.set(supp, { productsList: [], totalQty: 0, totalCost: 0 });
+            }
+            let data = suppliersMap.get(supp);
+            data.productsList.push(p.n);
+            data.totalQty += p.q;
+            data.totalCost += (p.p * p.q);
+        });
+
+        let rows = [];
+        let index = 1;
+        suppliersMap.forEach((data, suppName) => {
+            rows.push(`
+                <tr>
+                    <td>${index++}</td>
+                    <td style="font-weight:bold; color:#16a085;">${suppName}</td>
+                    <td style="text-align:right; font-size:0.75rem;">${data.productsList.join(', ')}</td>
+                    <td style="font-weight:bold;">${data.totalQty} قطعة</td>
+                    <td style="color:#27ae60; font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
+                </tr>
+            `);
+        });
+
+        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="5">لا توجد بيانات موردين مطابقة</td></tr>';
+        else tbody.innerHTML = rows.join('');
     }
 
     function editSingleInvoice(invId) {
@@ -1023,6 +1268,11 @@
             if (isoDate) {
                 document.getElementById('invoiceDate').value = isoDate;
             }
+
+            document.getElementById('invoiceDiscountPercent').value = inv.discountPercent || 0;
+            document.getElementById('paymentTypeSelect').value = inv.paymentType || 'cash';
+            document.getElementById('customerNameInput').value = inv.customerName || '';
+            toggleCustomerNameField();
 
             invoiceItems = inv.items ? JSON.parse(JSON.stringify(inv.items)) : [];
             
@@ -1100,10 +1350,13 @@
                 totalComm += invComm;
                 totalNetProfit += invProfit;
 
+                let payTypeTag = inv.paymentType === 'credit' ? `<br><span style="color:#e74c3c;">آجل: ${inv.customerName}</span>` : '<br><span style="color:#27ae60;">نقدي</span>';
+
                 reportRows.push(`
                     <tr>
                         <td>${reportRows.length + 1}</td>
                         <td style="font-weight:bold;">#${inv.id}</td>
+                        <td style="font-weight:bold;">${payTypeTag}</td>
                         <td style="white-space:nowrap; font-weight:bold; color:#1e3c72;">${formatDateShort(inv.date)}</td>
                         <td style="text-align:right; font-size:0.75rem; line-height:1.4;">${itemsTextList.join('<br>')}</td>
                         <td>${invComm.toFixed(2)} ج.م</td>
@@ -1119,7 +1372,7 @@
             }
         });
 
-        if (reportRows.length === 0) tbody.innerHTML = '<tr><td colspan="8">لا توجد مبيعات مطابقة لهذا التصفية/الفترة</td></tr>';
+        if (reportRows.length === 0) tbody.innerHTML = '<tr><td colspan="9">لا توجد مبيعات مطابقة لهذا التصفية/الفترة</td></tr>';
         else tbody.innerHTML = reportRows.join('');
 
         document.getElementById('repTotalSell').textContent = totalSell.toFixed(2) + ' ج.م';
@@ -1189,6 +1442,7 @@
             <div style="font-size:12px; margin-bottom:6px;">مركز السائح لقطع غيار السيارات</div>
             <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:4px 0; margin-bottom:6px;">
                 <p style="font-size:11px; margin:2px 0;">رقم الفاتورة: <b>#${inv.id}</b></p>
+                <p style="font-size:11px; margin:2px 0;">نوع الدفع: ${inv.paymentType === 'credit' ? 'آجل ('+inv.customerName+')' : 'نقدي'}</p>
                 <p style="font-size:11px; margin:2px 0;">التاريخ: ${formattedDate}</p>
             </div>
             <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:right;">
@@ -1218,7 +1472,7 @@
                 </tbody>
             </table>
             <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px;">
-                <h3 style="text-align:center; font-size:14px; margin:4px 0;">الإجمالي: ${inv.totalEGP.toFixed(2)} ج.م</h3>
+                <h3 style="text-align:center; font-size:14px; margin:4px 0;">الإجمالي النهائي: ${inv.totalEGP.toFixed(2)} ج.م</h3>
             </div>
             <p style="font-size:10px; margin-top:8px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p>
             <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store 2026 | D&P Samy Luks</div>
@@ -1296,6 +1550,8 @@
         if (evt && evt.target) evt.target.classList.add('active');
 
         if(tabId === 'stockTab') renderStockTable();
+        if(tabId === 'creditTab') renderCreditReport();
+        if(tabId === 'suppliersTab') renderSuppliersReport();
         if(tabId === 'reportsTab') { populatePartnerDropdown(); generateReport(); }
     }
 </script>

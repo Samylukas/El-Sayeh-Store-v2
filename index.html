@@ -64,10 +64,14 @@
         .nav-controls { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
         .nav-controls .btn { width: auto; font-size: 0.8rem; padding: 6px 12px; margin-top: 0; }
 
+        /* --- تحسين الاستجابة والتجاوب الديناميكي للجداول --- */
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; border-radius: 6px; }
-        table { width: 100%; min-width: 900px; border-collapse: collapse; }
-        th, td { padding: 6px 4px; border: 1px solid #ddd; text-align: center; font-size: 0.78rem; word-break: break-word; vertical-align: middle; }
-        th { background: #1e3c72; color: white; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { padding: 8px 6px; border: 1px solid #ddd; text-align: center; font-size: 0.8rem; word-break: break-word; vertical-align: middle; }
+        th { background: #1e3c72; color: white; white-space: nowrap; font-size: 0.82rem; }
+
+        .action-btn-group { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+        .action-btn-group .btn { width: auto; font-size: 0.72rem; padding: 4px 6px; margin: 0; }
 
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
         .login-card { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 380px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
@@ -137,7 +141,6 @@
     </div>
 </div>
 
-<!-- نافذة تحصيل الديون المحمية باختيار العميل -->
 <div id="payCreditModal" class="login-overlay" style="display:none; z-index:999999;">
     <div class="login-card" style="max-width:380px; text-align:right;">
         <h3 style="color:#1e3c72; margin-bottom:12px; text-align:center;">💵 تسجيل سداد / تحصيل من عميل</h3>
@@ -308,7 +311,7 @@
         </div>
     </div>
 
-    <!-- 2. تفاصيل المخزون -->
+    <!-- 2. تفاصيل المخزون الديناميكي المتجاوب -->
     <div id="stockTab" class="tab-content manager-only">
         <div class="section-title">📦 تفاصيل المخزون والباركود والشركاء</div>
         <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة أو الباركود..." oninput="filterStockTable(this.value)">
@@ -320,7 +323,7 @@
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة التجاري</th><th>سعر البيع</th><th>الكمية المتاحة</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th style="width:280px;">إجراءات وخيارات</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة التجاري</th><th>سعر البيع</th><th>الكمية المتاحة</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th>خيارات وإجراءات</th></tr>
             </thead>
             <tbody id="stockTableBody"></tbody>
         </table></div>
@@ -556,7 +559,6 @@
         alert(`✅ تم حفظ بيانات المورد (${name}) بنجاح!`);
     }
 
-    // فتح نافذة تحصيل الديون وحصر العملاء الآجلين المسجلين فقط
     function openPayCreditModal() {
         const select = document.getElementById('payCreditCustomerSelect');
         select.innerHTML = '';
@@ -1056,7 +1058,7 @@
         updateLowStockAlert();
     }
 
-    // تصحيح الترتيب المطابق تماماً لصورة جدول جوجل شيت الأصلي
+    // تنسيق جدول المخزون الديناميكي المتفاعل بأسلوب زر الأوامر المرنة أفقياً
     function renderStockTableCustom(list) {
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {
@@ -1077,12 +1079,14 @@
                 <td>${formatDateShort(i.expiry)}</td>
                 <td style="color:#16a085; font-weight:bold;">${i.supplier || 'غير محدد'}</td>
                 <td>
-                    <button class="btn btn-blue" style="padding:3px 6px; font-size:0.72rem; margin:1px;" onclick="editProductDetails('${i.n}')">✏️ تعديل</button>
-                    <button class="btn btn-purple" style="padding:3px 6px; font-size:0.72rem; margin:1px;" onclick="scanBarcodeForProduct('${i.n}')">📷 كاميرا</button>
-                    <button class="btn ${hasBarcode ? 'btn-blue' : 'btn-orange'}" style="padding:3px 6px; font-size:0.72rem; margin:1px;" onclick="generateBarcodeForProduct('${i.n}')">
-                        ${hasBarcode ? 'طباعة 🏷️' : 'توليد 🎲'}
-                    </button>
-                    <button class="btn btn-red" style="padding:3px 6px; font-size:0.72rem; margin:1px;" onclick="deleteProductFromSystem('${i.n}')">حذف 🗑️</button>
+                    <div class="action-btn-group">
+                        <button class="btn btn-blue" onclick="editProductDetails('${i.n}')">✏️ تعديل</button>
+                        <button class="btn btn-purple" onclick="scanBarcodeForProduct('${i.n}')">📷 كاميرا</button>
+                        <button class="btn ${hasBarcode ? 'btn-blue' : 'btn-orange'}" onclick="generateBarcodeForProduct('${i.n}')">
+                            ${hasBarcode ? 'طباعة 🏷️' : 'توليد 🎲'}
+                        </button>
+                        <button class="btn btn-red" onclick="deleteProductFromSystem('${i.n}')">حذف 🗑️</button>
+                    </div>
                 </td>
             </tr>
             `;
@@ -1249,7 +1253,6 @@
             return alert('⚠️ عند اختيار الدفع الآجل، يجب كتابة اسم العميل!');
         }
 
-        // الخصم الفعلي للمخزون يحدث فقط عند الحفظ النهائي
         for (let item of invoiceItems) {
             const pObj = products.find(p => p.n === item.name);
             if (pObj) {

@@ -137,7 +137,6 @@
     </div>
 </div>
 
-<!-- نافذة إضافة وتعديل بيانات المورد -->
 <div id="supplierModal" class="login-overlay" style="display:none; z-index:999999;">
     <div class="login-card" style="max-width:420px; text-align:right;">
         <h3 style="color:#1e3c72; margin-bottom:12px; text-align:center;">🚚 إضافة / تعديل بيانات المورد</h3>
@@ -833,10 +832,17 @@
             document.getElementById('searchInput').value = barcodeQuery;
             searchProduct();
         } else if (key === 'addNew') {
+            // التحقق من تكرار الباركود قبل وضعه
+            if (isBarcodeExists(barcodeQuery)) {
+                return alert(`⚠️ الباركود [${barcodeQuery}] مكرر ومسجل لصنف آخر بالفعل!`);
+            }
             document.getElementById('newProdBarcode').value = barcodeQuery;
             alert("✅ تم التقاط الباركود: " + barcodeQuery);
         } else if (key === 'stock') {
             if (selectedStockEditProduct) {
+                if (isBarcodeExists(barcodeQuery, selectedStockEditProduct.n)) {
+                    return alert(`⚠️ الباركود [${barcodeQuery}] مكرر ومسجل لصنف آخر بالفعل!`);
+                }
                 selectedStockEditProduct.barcode = barcodeQuery;
                 syncToCloud("updateSingleProduct", selectedStockEditProduct);
                 alert(`✅ تم ربط الباركود [${barcodeQuery}] بالمنتج (${selectedStockEditProduct.n}) بنجاح!`);
@@ -854,12 +860,27 @@
         toggleCameraScanner('stock');
     }
 
+    function isBarcodeExists(barcode, currentProdName = '') {
+        if (!barcode || barcode.trim() === '') return false;
+        return products.some(p => p.barcode && p.barcode.trim().toLowerCase() === barcode.trim().toLowerCase() && p.n.toLowerCase() !== currentProdName.toLowerCase());
+    }
+
+    function isProductNameExists(prodName, currentProdName = '') {
+        if (!prodName || prodName.trim() === '') return false;
+        return products.some(p => p.n && p.n.trim().toLowerCase() === prodName.trim().toLowerCase() && p.n.toLowerCase() !== currentProdName.toLowerCase());
+    }
+
     function generateBarcodeForProduct(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod) return;
 
         if (!prod.barcode || prod.barcode.trim() === "") {
-            prod.barcode = "2026" + Math.floor(1000 + Math.random() * 9000);
+            let newBarcode = "";
+            do {
+                newBarcode = "2026" + Math.floor(1000 + Math.random() * 9000);
+            } while (isBarcodeExists(newBarcode, prod.n));
+
+            prod.barcode = newBarcode;
             syncToCloud("updateSingleProduct", prod);
             alert(`✅ تم إصدار باركود جديد للمنتج [${prod.n}]: (${prod.barcode})!`);
         }
@@ -872,6 +893,11 @@
 
         const newName = prompt("اسم القطعة:", prod.n);
         if (!newName) return;
+
+        if (isProductNameExists(newName, prod.n)) {
+            return alert(`⚠️ اسم المنتج (${newName}) مكرر وموجود بالنظام بالفعل!`);
+        }
+
         const newSupplier = prompt("اسم المورد:", prod.supplier || "");
         const newSize = prompt("المقاس:", prod.size || "");
         const newPurpose = prompt("الغرض:", prod.purpose || "");
@@ -918,7 +944,22 @@
         let barcode = document.getElementById('newProdBarcode').value.trim();
 
         if (!name) return alert('أدخل اسم الصنف أولاً!');
-        if (!barcode) barcode = "2026" + Math.floor(1000 + Math.random() * 9000);
+
+        // منع تكرار اسم القطعة
+        if (isProductNameExists(name)) {
+            return alert(`⚠️ اسم المنتج (${name}) مكرر ومستجّل سابقاً بالسيستم!`);
+        }
+
+        // منع تكرار الباركود
+        if (barcode && isBarcodeExists(barcode)) {
+            return alert(`⚠️ الباركود [${barcode}] مكرر ومسجل لصنف آخر بالفعل!`);
+        }
+
+        if (!barcode) {
+            do {
+                barcode = "2026" + Math.floor(1000 + Math.random() * 9000);
+            } while (isBarcodeExists(barcode));
+        }
 
         let prodObj = { n: name, supplier: supplier, size: size, purpose: purpose, p: price, sp: sellPrice, q: qty, p1: p1, p2: p2, barcode: barcode, expiry: formatDateShort(expiry) };
         products.push(prodObj);
@@ -944,6 +985,7 @@
         updateLowStockAlert();
     }
 
+    // تصحيح قراءة واستخراج الحقول بدقة مطابقة لجوجل شيت
     function renderStockTableCustom(list) {
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {
@@ -952,12 +994,12 @@
             return `
             <tr style="${isLow ? 'background:#fff0f0;' : ''}">
                 <td>${index + 1}</td>
-                <td style="font-weight:bold;">${i.n}</td>
+                <td style="font-weight:bold;">${i.n || '-'}</td>
                 <td>${i.size || '-'}</td>
                 <td>${i.purpose || '-'}</td>
                 <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#27ae60'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
-                <td>${i.p.toFixed(2)}</td>
-                <td style="color:#27ae60; font-weight:bold;">${i.sp.toFixed(2)}</td>
+                <td>${(i.p || 0).toFixed(2)}</td>
+                <td style="color:#27ae60; font-weight:bold;">${(i.sp || 0).toFixed(2)}</td>
                 <td style="color:#16a085; font-weight:bold;">${i.supplier || 'غير محدد'}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p1 || '-'}</td>
                 <td style="color:#8e44ad; font-weight:bold;">${i.p2 || '-'}</td>

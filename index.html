@@ -333,7 +333,7 @@
         </table></div>
     </div>
 
-    <!-- 3. إضافة صنف جديد مع خاصية الإكمال التلقائي مبرمجة -->
+    <!-- 3. إضافة صنف جديد -->
     <div id="addStockTab" class="tab-content manager-only">
         <div class="section-title">➕ إضافة قطعة غيار جديدة بالنظام</div>
         <div class="card" style="background:#eef7fe;">
@@ -563,7 +563,6 @@
         list.innerHTML = products.map(p => `<option value="${p.n}">`).join('');
     }
 
-    // إرسال رسالة التذكير بالواتساب بالرسالة المخصصة الجديدة مع رمز الترس
     function sendWhatsAppReminder(custName, registeredPhone) {
         let phone = registeredPhone;
         if (!phone || phone.trim() === '' || phone === '-') {
@@ -1447,9 +1446,15 @@
         if (invId) printSingleReceipt(invId);
     }
 
+    // دالة عرض تقرير الآجل المصححة بالكامل
     function renderCreditReport() {
-        const queryName = document.getElementById('creditSearchCustomer').value.trim().toLowerCase();
+        const queryName = document.getElementById('creditSearchCustomer') ? document.getElementById('creditSearchCustomer').value.trim().toLowerCase() : '';
+        const fromD = document.getElementById('creditFromDate') ? document.getElementById('creditFromDate').value : '';
+        const toD = document.getElementById('creditToDate') ? document.getElementById('creditToDate').value : '';
+
         const tbody = document.getElementById('creditTableBody');
+        if (!tbody) return;
+
         let creditInvoices = savedInvoices.filter(i => i.paymentType === 'credit');
 
         let totalCredit = 0;
@@ -1464,9 +1469,9 @@
                 if (toD && invD > toD) return;
             }
 
-            let paid = inv.paidAmount || 0;
-            let due = inv.totalEGP - paid;
-            if (due <= 0) return;
+            let paid = parseFloat(inv.paidAmount) || 0;
+            let due = parseFloat(inv.totalEGP) - paid;
+            if (due <= 0) return; // العميل سدد الفاتورة بالكامل
 
             totalCredit += due;
             rows.push(`
@@ -1477,9 +1482,9 @@
                     <td style="font-weight:bold;">#${inv.id}</td>
                     <td>${formatDateShort(inv.date)}</td>
                     <td style="text-align:right; font-size:0.72rem;">${inv.itemsText || '-'}</td>
-                    <td style="font-weight:bold;">${inv.totalEGP.toFixed(2)} ج.م</td>
+                    <td style="font-weight:bold;">${(parseFloat(inv.totalEGP) || 0).toFixed(2)} ج.م</td>
                     <td>${paid.toFixed(2)} ج.م</td>
-                    <td style="font-weight:bold;">${due.toFixed(2)} ج.م</td>
+                    <td style="font-weight:bold; color:#e74c3c;">${due.toFixed(2)} ج.م</td>
                     <td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
                     <td>
                         <button class="btn btn-purple" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="sendWhatsAppReminder('${inv.customerName}', '${inv.customerPhone || ''}')">تذكير واتساب 💬</button>
@@ -1488,10 +1493,16 @@
             `);
         });
 
-        if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="11">لا توجد ديون معروضة مطابقة للبحث/الفترة</td></tr>';
-        else tbody.innerHTML = rows.join('');
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11">لا توجد ديون معروضة مطابقة للبحث/الفترة</td></tr>';
+        } else {
+            tbody.innerHTML = rows.join('');
+        }
 
-        document.getElementById('creditTotalAmountVal').textContent = totalCredit.toFixed(2) + ' ج.م';
+        const totalValElem = document.getElementById('creditTotalAmountVal');
+        if (totalValElem) {
+            totalValElem.textContent = totalCredit.toFixed(2) + ' ج.م';
+        }
     }
 
     function renderSuppliersReport() {

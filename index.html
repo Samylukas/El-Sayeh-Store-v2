@@ -75,9 +75,6 @@
 
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
         .login-card { background: white; padding: 20px; border-radius: 12px; text-align: center; width: 92%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        
-        .pass-container { display: flex; gap: 4px; align-items: center; margin-top: 4px; }
-        .toggle-pass-btn { background: #e9ecef; border: 1px solid #ccc; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 1rem; user-select: none; }
 
         .totals-box { background: #fff; color: #000; padding: 10px; border-radius: 8px; margin-top: 10px; border: 2px solid #000; }
         .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; font-size: 0.8rem; text-align: center; }
@@ -117,10 +114,7 @@
 
         <div style="margin-bottom:12px; text-align:right;">
             <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">كلمة المرور:</label>
-            <div class="pass-container">
-                <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-bottom:0;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
-                <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()">👁️</button>
-            </div>
+            <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
         </div>
 
         <div style="display:flex; gap:6px;">
@@ -782,15 +776,8 @@
 
     function togglePasswordVisibility() {
         const passInput = document.getElementById('entryPassInput');
-        const toggleBtn = document.querySelector('.toggle-pass-btn');
         if (passInput) {
-            if (passInput.type === "password") {
-                passInput.type = "text";
-                if (toggleBtn) toggleBtn.textContent = "🙈";
-            } else {
-                passInput.type = "password";
-                if (toggleBtn) toggleBtn.textContent = "👁️";
-            }
+            passInput.type = (passInput.type === "password") ? "text" : "password";
         }
     }
 
@@ -964,7 +951,6 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    // دالة الدخول المصححة لقراءة كود 852 مباشرة وتفادي حظر المتصفح
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
@@ -987,8 +973,10 @@
             return;
         }
 
-        if (!passVal) return alert('برجاء إدخال كلمة المرور!');
-        if (document.activeElement) document.activeElement.blur();
+        if (!passVal) {
+            alert('برجاء إدخال كلمة المرور!');
+            return;
+        }
 
         let usersSource = cloudUsers;
         if (!usersSource || usersSource.length === 0) {
@@ -1006,7 +994,8 @@
         }
 
         if (!matched && usersSource.length > 0) {
-            return alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
+            alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
+            return;
         }
 
         if (!matched) {
@@ -1182,7 +1171,6 @@
         }
     }
 
-    // إضافة صنف جديد مع الجمع التلقائي على الكمية السابقة
     function addNewProductToSystem() {
         const name = document.getElementById('newProdName').value.trim();
         const supplier = document.getElementById('newProdSupplier').value.trim();

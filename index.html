@@ -248,7 +248,7 @@
                 </div>
                 <div class="field-box customer-credit-field" style="display:none;">
                     <label>رقم واتساب العميل (إلزامي للآجل):</label>
-                    <input type="text" id="customerPhoneInput" autocomplete="off" placeholder="01xxxxxxxxx">
+                    <input type="text" id="customerPhoneInput" autocomplete="off" placeholder="01xx/xxx/xxxx" oninput="applyPhoneMask(this)">
                 </div>
                 <div class="field-box">
                     <label>خصم نسبة مئوية (%):</label>
@@ -368,7 +368,7 @@
         </div>
     </div>
 
-    <!-- 4. آجل العملاء مع ربط البحث بالـ datalist -->
+    <!-- 4. آجل العملاء وتعديل البيانات -->
     <div id="creditTab" class="tab-content admin-only">
         <div class="section-title">📝 دفتر البيع الآجل وتحصيل ديون العملاء</div>
         <div class="card">
@@ -531,6 +531,41 @@
             alert('✅ تم تفعيل الاشتراك للشهر الجديد بنجاح!');
         } else {
             alert('❌ كود التفعيل غير صحيح!');
+        }
+    }
+
+    function applyPhoneMask(input) {
+        let val = input.value.replace(/\D/g, '');
+        if (val.length > 11) val = val.slice(0, 11);
+        
+        let formatted = '';
+        if (val.length > 0) formatted += val.substring(0, 4);
+        if (val.length > 4) formatted += '/' + val.substring(4, 7);
+        if (val.length > 7) formatted += '/' + val.substring(7, 11);
+        
+        input.value = formatted;
+    }
+
+    function editCreditCustomerDetails(oldName, oldPhone) {
+        const newName = prompt("تعديل اسم العميل:", oldName);
+        if (!newName || newName.trim() === '') return;
+
+        const newPhone = prompt("تعديل رقم هاتف الواتساب:", oldPhone || '');
+
+        let updated = false;
+        savedInvoices.forEach(inv => {
+            if (inv.paymentType === 'credit' && inv.customerName && inv.customerName.trim().toLowerCase() === oldName.trim().toLowerCase()) {
+                inv.customerName = newName.trim();
+                inv.customerPhone = newPhone ? newPhone.trim() : '';
+                syncToCloud("saveInvoice", inv);
+                updated = true;
+            }
+        });
+
+        if (updated) {
+            updateCustomersDatalist();
+            renderCreditReport();
+            alert(`✅ تم تحديث بيانات العميل (${newName}) بنجاح في كافة الفواتير!`);
         }
     }
 
@@ -1446,7 +1481,6 @@
         if (invId) printSingleReceipt(invId);
     }
 
-    // دالة عرض تقرير الآجل المصححة بالكامل
     function renderCreditReport() {
         const queryName = document.getElementById('creditSearchCustomer') ? document.getElementById('creditSearchCustomer').value.trim().toLowerCase() : '';
         const fromD = document.getElementById('creditFromDate') ? document.getElementById('creditFromDate').value : '';
@@ -1471,7 +1505,7 @@
 
             let paid = parseFloat(inv.paidAmount) || 0;
             let due = parseFloat(inv.totalEGP) - paid;
-            if (due <= 0) return; // العميل سدد الفاتورة بالكامل
+            if (due <= 0) return;
 
             totalCredit += due;
             rows.push(`
@@ -1487,7 +1521,10 @@
                     <td style="font-weight:bold; color:#e74c3c;">${due.toFixed(2)} ج.م</td>
                     <td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
                     <td>
-                        <button class="btn btn-purple" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="sendWhatsAppReminder('${inv.customerName}', '${inv.customerPhone || ''}')">تذكير واتساب 💬</button>
+                        <div class="action-btn-group">
+                            <button class="btn btn-purple" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="sendWhatsAppReminder('${inv.customerName}', '${inv.customerPhone || ''}')">تذكير واتساب 💬</button>
+                            <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="editCreditCustomerDetails('${inv.customerName}', '${inv.customerPhone || ''}')">✏️ تعديل</button>
+                        </div>
                     </td>
                 </tr>
             `);

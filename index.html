@@ -70,7 +70,7 @@
         th, td { padding: 8px 6px; border: 1px solid #000; text-align: center; font-size: 0.85rem; word-break: break-word; vertical-align: middle; color: #000 !important; font-weight: bold; line-height: 1.4; }
         th { background: #f0f0f0; color: #000 !important; white-space: nowrap; font-size: 0.85rem; }
 
-        .action-btn-group { display: flex; flex-direction: row; flex-wrap: wrap; gap: 2px; justify-content: center; min-width: 110px; }
+        .action-btn-group { display: flex; flex-direction: row; flex-wrap: wrap; gap: 2px; justify-content: center; min-width: 120px; }
         .action-btn-group .btn { width: auto; font-size: 0.65rem; padding: 2px 4px; margin: 0; line-height: 1.2; }
 
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
@@ -368,12 +368,12 @@
         </div>
     </div>
 
-    <!-- 4. آجل العملاء وتعديل البيانات -->
+    <!-- 4. آجل العملاء مع التنبيهات الملونة والفرز الشامل بدون حذف -->
     <div id="creditTab" class="tab-content admin-only">
         <div class="section-title">📝 دفتر البيع الآجل وتحصيل ديون العملاء</div>
         <div class="card">
             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" list="customersList" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
+                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" list="customersList" placeholder="ابحث باسم العميل لعرض جميع سحوباته..." oninput="renderCreditReport()"></div>
                 <div>من: <input type="date" id="creditFromDate" onchange="renderCreditReport()" style="font-size:0.75rem;"></div>
                 <div>إلى: <input type="date" id="creditToDate" onchange="renderCreditReport()" style="font-size:0.75rem;"></div>
                 <button class="btn btn-orange" style="width:auto; margin:0; font-size:0.75rem; padding:4px 8px;" onclick="clearCreditDates()">مسح التواريخ 🧹</button>
@@ -383,13 +383,13 @@
 
         <div id="creditSummaryBox" class="totals-box" style="margin-bottom:8px;">
             <div class="totals-grid">
-                <div class="total-item">إجمالي الديون <span id="creditTotalAmountVal">0.00 ج.م</span></div>
+                <div class="total-item">إجمالي الديون المتبقية <span id="creditTotalAmountVal">0.00 ج.م</span></div>
             </div>
         </div>
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم العميل</th><th>رقم الهواتف</th><th>الفاتورة</th><th>التاريخ</th><th>الأصناف</th><th>الإجمالي</th><th>المسدد</th><th>المتبقي</th><th>البائع</th><th>إجراء والتذكير</th></tr>
+                <tr><th>الحالة</th><th>#</th><th>اسم العميل</th><th>رقم الهواتف</th><th>الفاتورة</th><th>التاريخ</th><th>الأصناف</th><th>الإجمالي</th><th>المسدد</th><th>المتبقي</th><th>البائع</th><th>إجراء والتذكير</th></tr>
             </thead>
             <tbody id="creditTableBody"></tbody>
         </table></div>
@@ -610,7 +610,7 @@
             phone = '2' + phone;
         }
 
-        const rawMsg = "نود تذكير سيادتكم بموعد سداد الحساب الآجل المستحق لـ مركز السائح لقطع غيار السيارات.\nشاكرين لسيادتكم حسن التعامل والالتزام المعهود، ونتشرف بزيارتكم دائماً!";
+        const rawMsg = "مساء الخير يا فندم 🌸\nنود تذكير سيادتكم بموعد سداد الحساب الآجل المستحق لـ مركز السائح لقطع غيار السيارات.\nشاكرين لسيادتكم حسن التعامل والالتزام المعهود، ونتشرف بزيارتكم دائماً! ⚙️";
         const message = encodeURIComponent(rawMsg);
         const url = `https://wa.me/${phone}?text=${message}`;
         window.open(url, '_blank');
@@ -1481,6 +1481,7 @@
         if (invId) printSingleReceipt(invId);
     }
 
+    // دالة آجل العملاء الكاملة مع الاحتفاظ بكل الفواتير وإتاحة الحذف والتنبيه الملون
     function renderCreditReport() {
         const queryName = document.getElementById('creditSearchCustomer') ? document.getElementById('creditSearchCustomer').value.trim().toLowerCase() : '';
         const fromD = document.getElementById('creditFromDate') ? document.getElementById('creditFromDate').value : '';
@@ -1493,6 +1494,7 @@
 
         let totalCredit = 0;
         let rows = [];
+        const now = new Date();
 
         creditInvoices.forEach(inv => {
             if (queryName && (!inv.customerName || !inv.customerName.toLowerCase().includes(queryName))) return;
@@ -1505,11 +1507,34 @@
 
             let paid = parseFloat(inv.paidAmount) || 0;
             let due = parseFloat(inv.totalEGP) - paid;
-            if (due <= 0) return;
+            if (due < 0) due = 0;
 
             totalCredit += due;
+
+            // حساب المؤشر والتنبيه الزمني بالدوائر الملونة
+            let statusBadge = "🟢"; // افتراضي خضراء (مسدد بالكامل)
+            if (due > 0) {
+                let purchaseDate = new Date();
+                try {
+                    let isoD = parseFormattedDateToISO(inv.date);
+                    if (isoD) purchaseDate = new Date(isoD);
+                } catch(e) {}
+
+                let diffTime = now - purchaseDate;
+                let diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays >= 30) {
+                    statusBadge = "🔴"; // حمراء (تجاوزت شهر)
+                } else if (diffDays >= 28) {
+                    statusBadge = "🟡"; // صفراء (باقي يومين أو أقل على الشهر)
+                } else {
+                    statusBadge = "⚪"; // متبقية وفي المهلة
+                }
+            }
+
             rows.push(`
                 <tr>
+                    <td style="font-size:1.1rem;">${statusBadge}</td>
                     <td>${rows.length + 1}</td>
                     <td style="font-weight:bold;">${inv.customerName || 'غير محدد'}</td>
                     <td style="font-weight:bold; font-size:0.75rem; color:#16a085;">${inv.customerPhone || '-'}</td>
@@ -1518,12 +1543,13 @@
                     <td style="text-align:right; font-size:0.72rem;">${inv.itemsText || '-'}</td>
                     <td style="font-weight:bold;">${(parseFloat(inv.totalEGP) || 0).toFixed(2)} ج.م</td>
                     <td>${paid.toFixed(2)} ج.م</td>
-                    <td style="font-weight:bold; color:#e74c3c;">${due.toFixed(2)} ج.م</td>
+                    <td style="font-weight:bold; color:${due > 0 ? '#e74c3c' : '#27ae60'};">${due.toFixed(2)} ج.م</td>
                     <td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
                     <td>
                         <div class="action-btn-group">
                             <button class="btn btn-purple" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="sendWhatsAppReminder('${inv.customerName}', '${inv.customerPhone || ''}')">تذكير واتساب 💬</button>
                             <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="editCreditCustomerDetails('${inv.customerName}', '${inv.customerPhone || ''}')">✏️ تعديل</button>
+                            <button class="btn btn-red" style="padding:2px 5px; font-size:0.68rem; margin:1px;" onclick="deleteSingleInvoice(${inv.id})">حذف 🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -1531,7 +1557,7 @@
         });
 
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11">لا توجد ديون معروضة مطابقة للبحث/الفترة</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12">لا توجد ديون معروضة مطابقة للبحث/الفترة</td></tr>';
         } else {
             tbody.innerHTML = rows.join('');
         }

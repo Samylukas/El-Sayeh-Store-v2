@@ -333,7 +333,7 @@
         </table></div>
     </div>
 
-    <!-- 3. إضافة صنف جديد -->
+    <!-- 3. إضافة صنف جديد مع خاصية الإكمال التلقائي مبرمجة -->
     <div id="addStockTab" class="tab-content manager-only">
         <div class="section-title">➕ إضافة قطعة غيار جديدة بالنظام</div>
         <div class="card" style="background:#eef7fe;">
@@ -368,12 +368,12 @@
         </div>
     </div>
 
-    <!-- 4. آجل العملاء -->
+    <!-- 4. آجل العملاء مع ربط البحث بالـ datalist -->
     <div id="creditTab" class="tab-content admin-only">
         <div class="section-title">📝 دفتر البيع الآجل وتحصيل ديون العملاء</div>
         <div class="card">
             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" placeholder="ابحث باسم العميل..." oninput="renderCreditReport()"></div>
+                <div style="flex:1;"><input type="text" id="creditSearchCustomer" class="search-box" style="margin-bottom:0;" autocomplete="off" list="customersList" placeholder="ابحث باسم العميل معرفة المتبقي عليه..." oninput="renderCreditReport()"></div>
                 <div>من: <input type="date" id="creditFromDate" onchange="renderCreditReport()" style="font-size:0.75rem;"></div>
                 <div>إلى: <input type="date" id="creditToDate" onchange="renderCreditReport()" style="font-size:0.75rem;"></div>
                 <button class="btn btn-orange" style="width:auto; margin:0; font-size:0.75rem; padding:4px 8px;" onclick="clearCreditDates()">مسح التواريخ 🧹</button>
@@ -563,6 +563,7 @@
         list.innerHTML = products.map(p => `<option value="${p.n}">`).join('');
     }
 
+    // إرسال رسالة التذكير بالواتساب بالرسالة المخصصة الجديدة مع رمز الترس
     function sendWhatsAppReminder(custName, registeredPhone) {
         let phone = registeredPhone;
         if (!phone || phone.trim() === '' || phone === '-') {
@@ -575,7 +576,8 @@
             phone = '2' + phone;
         }
 
-        const message = encodeURIComponent("نذكر حضرتك بموعد دفع حساب اجل لمركز السائح لقطع غيار السيارات");
+        const rawMsg = "مساء الخير يا فندم 🌸\nنود تذكير سيادتكم بموعد سداد الحساب الآجل المستحق لـ مركز السائح لقطع غيار السيارات.\nشاكرين لسيادتكم حسن التعامل والالتزام المعهود، ونتشرف بزيارتكم دائماً! ⚙️";
+        const message = encodeURIComponent(rawMsg);
         const url = `https://wa.me/${phone}?text=${message}`;
         window.open(url, '_blank');
     }
@@ -920,7 +922,6 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    // التحقق من كلمة السر والفرز بكلمة السر الاحتياطية 852 عند انقطاع الإنترنت أو التعذر
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
@@ -931,7 +932,6 @@
         if (!passVal) return alert('برجاء إدخال كلمة المرور!');
         if (document.activeElement) document.activeElement.blur();
 
-        // قبول كلمة السر الاحتياطية الموحدة 852 فورياً في كل الحالات
         if (passVal === '852') {
             let userRole = 'Admin';
             currentUser = { username: userInput, password: passVal, role: userRole };
@@ -1457,6 +1457,12 @@
 
         creditInvoices.forEach(inv => {
             if (queryName && (!inv.customerName || !inv.customerName.toLowerCase().includes(queryName))) return;
+            
+            if (inv.date) {
+                const invD = extractDateYYYYMMDD(inv.date);
+                if (fromD && invD < fromD) return;
+                if (toD && invD > toD) return;
+            }
 
             let paid = inv.paidAmount || 0;
             let due = inv.totalEGP - paid;

@@ -11,9 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
-        html, body { width: 100%; overflow-x: hidden; background-color: #f0f2f5; padding: 4px; color: #000; direction: rtl; }
+        html, body { width: 100%; overflow-x: hidden; background-color: #f0f4f8; padding: 4px; color: #1e293b; direction: rtl; }
         
-        .app-container { width: 100%; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; min-height: 98vh; padding-bottom: 30px; overflow-x: hidden; }
+        .app-container { width: 100%; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px; border-radius: 12px; box-shadow: 0 4px 15px rgba(30, 60, 114, 0.08); position: relative; min-height: 98vh; padding-bottom: 30px; overflow-x: hidden; border: 1px solid #cbd5e1; }
         h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.1rem; }
         
         .spinning-gear {
@@ -30,14 +30,14 @@
         }
 
         .sync-status { text-align: center; font-size: 0.8rem; font-weight: bold; margin-bottom: 6px; padding: 4px; border-radius: 6px; }
-        .status-online { background: #d4edda; color: #155724; }
-        .status-syncing { background: #fff3cd; color: #856404; }
+        .status-online { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .status-syncing { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
 
-        .alerts-bar { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.78rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
+        .alerts-bar { background: #fff8e7; border: 1px solid #ffe8b3; color: #b78103; padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.78rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
 
-        .nav-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 2px solid #e0e0e0; padding-bottom: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .tab-btn { background: #e9ecef; color: #2c3e50; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 0.8rem; flex-shrink: 0; }
-        .tab-btn.active { background: #1e3c72; color: #fff; }
+        .nav-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tab-btn { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 0.8rem; flex-shrink: 0; }
+        .tab-btn.active { background: #1e3c72; color: #fff; border-color: #1e3c72; }
 
         .tab-content { display: none; width: 100%; }
         .tab-content.active { display: block; }
@@ -46,15 +46,15 @@
         
         .search-box { width: 100%; padding: 8px; font-size: 13px; border: 2px solid #3498db; border-radius: 6px; outline: none; margin-bottom: 6px; box-sizing: border-box; background: #fff; }
         .results-list { max-height: 180px; overflow-y: auto; border: 2px solid #3498db; border-radius: 6px; margin-bottom: 8px; display: none; background: #ffffff; position: relative; z-index: 99999; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .result-item { padding: 6px 8px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 0.8rem; }
+        .result-item { padding: 6px 8px; cursor: pointer; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 0.8rem; }
 
-        .card { background: #f8f9fa; border: 1px solid #e0e0e0; padding: 10px; border-radius: 8px; margin-bottom: 8px; box-sizing: border-box; width: 100%; }
+        .card { background: #f8fafc; border: 1px solid #94a3b8; padding: 10px; border-radius: 8px; margin-bottom: 8px; box-sizing: border-box; width: 100%; }
         .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.8rem; flex-wrap: wrap; gap: 4px; }
         
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 6px; width: 100%; box-sizing: border-box; }
         .field-box { display: flex; flex-direction: column; width: 100%; }
-        .field-box label { font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; color: #2c3e50; }
-        .field-box input, .field-box select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; text-align: center; font-size: 0.85rem; box-sizing: border-box; background: #fff; }
+        .field-box label { font-size: 0.75rem; font-weight: bold; margin-bottom: 2px; color: #1e3c72; }
+        .field-box input, .field-box select { width: 100%; padding: 8px; border: 1px solid #94a3b8; border-radius: 6px; text-align: center; font-size: 0.85rem; box-sizing: border-box; background: #fff; }
 
         .btn { background: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 8px; width: 100%; font-size: 0.85rem; }
         .btn-blue { background: #3498db; }
@@ -65,10 +65,11 @@
         .nav-controls { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
         .nav-controls .btn { width: auto; font-size: 0.75rem; padding: 4px 8px; margin-top: 0; }
 
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #000; }
+        /* تنسيقات الجداول العصرية بالمظهر البيج والأزرق */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 8px; border-radius: 8px; border: 2px solid #3498db; }
         table { width: 100%; border-collapse: collapse; background: #fff; table-layout: auto; direction: rtl; }
-        th, td { padding: 8px 6px; border: 1px solid #000; text-align: center; font-size: 0.85rem; word-break: break-word; vertical-align: middle; color: #000 !important; font-weight: bold; line-height: 1.4; }
-        th { background: #f0f0f0; color: #000 !important; white-space: nowrap; font-size: 0.85rem; }
+        th, td { padding: 8px 6px; border: 1px solid #93c5fd; text-align: center; font-size: 0.85rem; word-break: break-word; vertical-align: middle; color: #1e293b !important; font-weight: bold; line-height: 1.4; }
+        th { background: #fcf8e3; color: #1e3c72 !important; white-space: nowrap; font-size: 0.85rem; border-bottom: 2px solid #3498db; }
 
         .action-btn-group { display: flex; flex-direction: row; flex-wrap: wrap; gap: 2px; justify-content: center; min-width: 120px; }
         .action-btn-group .btn { width: auto; font-size: 0.65rem; padding: 2px 4px; margin: 0; line-height: 1.2; }
@@ -76,12 +77,12 @@
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
         .login-card { background: white; padding: 20px; border-radius: 12px; text-align: center; width: 92%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
-        .totals-box { background: #fff; color: #000; padding: 10px; border-radius: 8px; margin-top: 10px; border: 2px solid #000; }
+        .totals-box { background: #fcf8e3; color: #1e3c72; padding: 10px; border-radius: 8px; margin-top: 10px; border: 2px solid #3498db; }
         .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; font-size: 0.8rem; text-align: center; }
-        .total-item { background: #f9f9f9; padding: 6px 4px; border-radius: 4px; border: 1px solid #000; color: #000; }
-        .total-item span { display: block; font-weight: bold; font-size: 0.95rem; color: #000 !important; margin-top: 2px; }
+        .total-item { background: #ffffff; padding: 6px 4px; border-radius: 6px; border: 1px solid #bfdbfe; color: #1e3c72; font-weight: bold; }
+        .total-item span { display: block; font-weight: bold; font-size: 0.95rem; margin-top: 2px; }
 
-        .footer-signature { text-align: center; margin-top: 15px; padding-top: 8px; border-top: 1px solid #000; font-size: 0.75rem; color: #000; font-weight: bold; }
+        .footer-signature { text-align: center; margin-top: 15px; padding-top: 8px; border-top: 1px solid #cbd5e1; font-size: 0.75rem; color: #64748b; font-weight: bold; }
 
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
@@ -221,7 +222,7 @@
             <button class="btn btn-red" style="width: auto; margin: 0; font-size:0.75rem;" onclick="clearCurrentInvoice()">تفريغ الفاتورة (F8) 🧹</button>
         </div>
 
-        <div class="info-row" style="background: #eef7fe; padding: 8px; border-radius: 6px; align-items: center;">
+        <div class="info-row" style="background: #eef7fe; padding: 8px; border-radius: 6px; align-items: center; border: 1px solid #bfdbfe;">
             <div>تاريخ الفاتورة: <input type="datetime-local" id="invoiceDate" style="padding: 2px; border-radius: 4px; border: 1px solid #ccc; font-size:0.75rem;"></div>
             <div>رقم الفاتورة: <span id="invNum" style="color: #1e3c72; font-size: 1.1rem; font-weight: bold;">1001</span></div>
         </div>
@@ -445,7 +446,7 @@
         </div>
     </div>
 
-    <!-- 7. المالية والمصروفات المحدثة بالكامل -->
+    <!-- 7. المالية والمصروفات المحدثة بالكامل مع كارت الإجماليات والصافي -->
     <div id="financeTab" class="tab-content admin-only">
         <div class="section-title">💵 المصروفات والإيرادات (بالجنيه المصري)</div>
         <div class="card">
@@ -456,6 +457,15 @@
                 <div class="field-box"><label>التاريخ والوقت:</label><input type="datetime-local" id="finDate"></div>
             </div>
             <button class="btn btn-purple" style="margin-top: 8px;" onclick="saveFinanceEntry()">حفظ الحركة المالية 💾</button>
+        </div>
+
+        <!-- كارت إجماليات المصروفات والصافي -->
+        <div id="financeSummaryBox" class="totals-box" style="margin-top:10px; margin-bottom:10px;">
+            <div class="totals-grid">
+                <div class="total-item">إجمالي المصروفات <span id="finTotalExpensesVal" style="color:#e74c3c;">0.00 ج.م</span></div>
+                <div class="total-item">إجمالي الإيرادات <span id="finTotalRevenuesVal" style="color:#27ae60;">0.00 ج.م</span></div>
+                <div class="total-item" style="grid-column: span 2;">صافي الحركة المالية <span id="finNetBalanceVal" style="font-size:1.1rem; color:#1e3c72;">0.00 ج.م</span></div>
+            </div>
         </div>
 
         <div class="section-title" style="margin-top:12px;">📊 سجل الحركات المالية المسجلة</div>
@@ -1766,7 +1776,6 @@
             }
         });
 
-        // خصم المصروفات العادية وحساب الإيرادات الإضافية في الصافي
         let totalExpenses = 0, totalAddRevenues = 0;
         savedFinanceEntries.forEach(fe => {
             if (fe.type === 'Expense') totalExpenses += parseFloat(fe.amount) || 0;
@@ -1818,20 +1827,43 @@
 
         if (!savedFinanceEntries || savedFinanceEntries.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5">لا توجد حركات مالية مسجلة بعد</td></tr>';
+            document.getElementById('finTotalExpensesVal').textContent = '0.00 ج.م';
+            document.getElementById('finTotalRevenuesVal').textContent = '0.00 ج.م';
+            document.getElementById('finNetBalanceVal').textContent = '0.00 ج.م';
             return;
         }
 
-        tbody.innerHTML = savedFinanceEntries.map((item, index) => `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${formatDateShort(item.date)}</td>
-                <td style="font-weight:bold; color:${item.type === 'Expense' ? '#e74c3c' : '#27ae60'};">
-                    ${item.type === 'Expense' ? 'مصروفات (-)' : 'إيراد (+)'}
-                </td>
-                <td style="font-weight:bold;">${item.category}</td>
-                <td style="font-weight:bold;">${parseFloat(item.amount).toFixed(2)} ج.م</td>
-            </tr>
-        `).join('');
+        let totalExp = 0;
+        let totalRev = 0;
+
+        tbody.innerHTML = savedFinanceEntries.map((item, index) => {
+            let amt = parseFloat(item.amount) || 0;
+            if (item.type === 'Expense') totalExp += amt;
+            if (item.type === 'Revenue') totalRev += amt;
+
+            return `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${formatDateShort(item.date)}</td>
+                    <td style="font-weight:bold; color:${item.type === 'Expense' ? '#e74c3c' : '#27ae60'};">
+                        ${item.type === 'Expense' ? 'مصروفات (-)' : 'إيراد (+)'}
+                    </td>
+                    <td style="font-weight:bold;">${item.category}</td>
+                    <td style="font-weight:bold;">${amt.toFixed(2)} ج.م</td>
+                </tr>
+            `;
+        }).join('');
+
+        let netBal = totalRev - totalExp;
+
+        document.getElementById('finTotalExpensesVal').textContent = totalExp.toFixed(2) + ' ج.م';
+        document.getElementById('finTotalRevenuesVal').textContent = totalRev.toFixed(2) + ' ج.م';
+        
+        const netElem = document.getElementById('finNetBalanceVal');
+        if (netElem) {
+            netElem.textContent = netBal.toFixed(2) + ' ج.م';
+            netElem.style.color = netBal >= 0 ? '#27ae60' : '#e74c3c';
+        }
     }
 
     function exportReportPDF() {

@@ -445,7 +445,7 @@
         </div>
     </div>
 
-    <!-- 7. المالية والمصروفات المحدثة بالكامل مع خيارات التعديل والحذف والإجماليات -->
+    <!-- 7. المالية والمصروفات المحدثة بالكامل مع كارت الإجماليات والصافي -->
     <div id="financeTab" class="tab-content admin-only">
         <div class="section-title">💵 المصروفات والإيرادات (بالجنيه المصري)</div>
         <div class="card">
@@ -1056,7 +1056,7 @@
             adminElements.forEach(el => el.style.display = '');
             managerElements.forEach(el => el.style.display = '');
         } else if (isCs2) {
-            // cs2 يقدر يبيع ويعدل المخزون
+            // cs2 يقدر يبيع ويعدل المخزون فقط
             adminElements.forEach(el => el.style.display = 'none');
             managerElements.forEach(el => el.style.display = '');
         } else {
@@ -1934,6 +1934,7 @@
         });
     }
 
+    // دالة طباعة الباركود للملصق المشقوق 40 مم × 10 مم
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -1943,24 +1944,62 @@
             <html><head><title>طباعة ملصق - ${prod.n}</title>
             <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
             <style>
-                body { font-family: Arial, sans-serif; margin: 0; padding: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
-                .split-label-card { width: 50mm; height: 12.5mm; border: 1px solid #ccc; padding: 1px 2px; text-align: center; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
-                .store-title { font-size: 6px; font-weight: bold; color: #1e3c72; }
-                .prod-title { font-size: 7px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 48mm; }
-                .prod-price { font-size: 6.5px; font-weight: bold; }
-                svg { width: 46mm; height: 5.5mm; }
+                @page {
+                    size: 40mm 10mm landscape;
+                    margin: 0;
+                }
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body {
+                    width: 40mm;
+                    height: 10mm;
+                    font-family: system-ui, sans-serif;
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0 1mm;
+                    background: #fff;
+                    overflow: hidden;
+                    direction: rtl;
+                }
+                .text-side {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: flex-start;
+                    width: 18mm;
+                    overflow: hidden;
+                }
+                .prod-title { font-size: 5.5pt; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: #000; line-height: 1.1; }
+                .prod-price { font-size: 6pt; font-weight: bold; color: #000; margin-top: 1px; }
+                .barcode-side {
+                    width: 20mm;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                svg { width: 19mm !important; height: 8mm !important; }
             </style></head>
             <body>
-                <div class="split-label-card">
-                    <div class="store-title">El Sayeh Store <span class="spinning-gear" style="font-size: 6px;">⚙️</span></div>
-                    <div class="prod-title">${prod.n} ${prod.size ? '('+prod.size+')' : ''}</div>
-                    <svg id="barcode-0"></svg>
-                    <div class="prod-price">السعر: ${(prod.sp || 0).toFixed(2)} ج.م</div>
+                <div class="text-side">
+                    <div class="prod-title">${prod.n}</div>
+                    <div class="prod-price">${(prod.sp || 0).toFixed(2)} ج.م</div>
                 </div>
+                <div class="barcode-side">
+                    <svg id="barcode-img"></svg>
+                </div>
+                
                 <script>
                     window.onload = function() {
-                        JsBarcode("#barcode-0", "${prod.barcode}", { format: "CODE128", width: 1.1, height: 18, fontSize: 7, margin: 0, displayValue: true });
-                        setTimeout(function() { window.print(); window.close(); }, 400);
+                        JsBarcode("#barcode-img", "${prod.barcode}", {
+                            format: "CODE128",
+                            width: 1,
+                            height: 20,
+                            fontSize: 0,
+                            margin: 0,
+                            displayValue: false
+                        });
+                        setTimeout(function() { window.print(); window.close(); }, 350);
                     };
                 <\/script>
             </body></html>

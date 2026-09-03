@@ -76,6 +76,9 @@
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
         .login-card { background: white; padding: 20px; border-radius: 12px; text-align: center; width: 92%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
+        .pass-container { position: relative; width: 100%; margin-bottom: 12px; }
+        .pass-toggle-btn { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; background: none; border: none; font-size: 1.1rem; }
+
         .totals-box { background: #fcf8e3; color: #1e3c72; padding: 10px; border-radius: 8px; margin-top: 10px; border: 2px solid #3498db; }
         .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; font-size: 0.8rem; text-align: center; }
         .total-item { background: #ffffff; padding: 6px 4px; border-radius: 6px; border: 1px solid #bfdbfe; color: #1e3c72; font-weight: bold; }
@@ -105,17 +108,17 @@
         
         <div style="margin-bottom:8px; text-align:right;">
             <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
-            <select id="entryUserSelect" class="search-box" style="text-align:center; margin-top:4px;">
-                <option value="admin">admin</option>
-                <option value="gss">gss</option>
-                <option value="cs2">cs2</option>
-                <option value="cashier">cashier</option>
+            <select id="entryUserSelect" class="search-box" style="text-align:center; margin-top:4px; font-weight:bold;">
+                <option value="">⏳ Loading Users...</option>
             </select>
         </div>
 
         <div style="margin-bottom:12px; text-align:right;">
             <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">كلمة المرور:</label>
-            <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
+            <div class="pass-container">
+                <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-bottom:0; padding-left:35px;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
+                <button type="button" class="pass-toggle-btn" onclick="togglePasswordVisibility()">👁️</button>
+            </div>
         </div>
 
         <div style="display:flex; gap:6px;">
@@ -503,6 +506,12 @@
     let selectedStockEditProduct = null;
     let editingFinanceId = null;
 
+    async function sha256Hex(text) {
+        if (!(window.crypto && crypto.subtle)) return text;
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     function playBeepSound() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -868,7 +877,7 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'F2') { e.preventDefault(); toggleCameraScanner('sales'); }
-            else if (e.key === 'F4') { e.preventDefault(); showTab('salesTab', e); document.getElementById('searchInput').focus(); }
+            else if (e.key === 'F4') { e.preventDefault(); showTab('salesTab', e); document.getElementById('searchInput')?.focus(); }
             else if (e.key === 'F8') { e.preventDefault(); clearCurrentInvoice(); }
             else if (e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); saveInvoice(); }
         });
@@ -911,7 +920,7 @@
             window.handleCloudInvoicesResponse = function(resData) {
                 const ind = document.getElementById('syncIndicator');
                 if (resData && resData.status === "success") {
-                    if (resData.users) { 
+                    if (resData.users && resData.users.length > 0) { 
                         cloudUsers = resData.users; 
                         localStorage.setItem('cachedUsers', JSON.stringify(cloudUsers));
                         populateUsersDropdown(); 
@@ -963,8 +972,15 @@
         if (usersSource && usersSource.length > 0) {
             select.innerHTML = '';
             usersSource.forEach(u => {
-                select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username}</option>`;
+                select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username.toUpperCase()}</option>`;
             });
+        } else {
+            select.innerHTML = `
+                <option value="admin">ADMIN</option>
+                <option value="gss">GSS</option>
+                <option value="cs2">CS2</option>
+                <option value="cashier">CASHIER</option>
+            `;
         }
     }
 
@@ -984,15 +1000,13 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    // دالة المطابقة الشاملة لحسابات الشيت أونلاين والأوفلاين
-    function validateEntryPassword() {
+    async function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
 
         const userInput = userSelect ? userSelect.value.trim().toLowerCase() : 'admin';
         const passVal = passInput ? passInput.value.toString().trim() : '';
 
-        // كلمة سر ماستر احتياطية
         if (passVal === '852') {
             currentUser = { username: userInput, password: passVal, role: 'Admin' };
             document.getElementById('loginOverlay').style.display = 'none';
@@ -1020,12 +1034,16 @@
             } catch(e) { usersSource = []; }
         }
 
+        const inputHash = await sha256Hex(passVal);
         let matched = null;
+
         if (usersSource && usersSource.length > 0) {
-            matched = usersSource.find(u => 
-                u.username.toString().trim().toLowerCase() === userInput && 
-                u.password.toString().trim() === passVal
-            );
+            matched = usersSource.find(u => {
+                const nameMatches = u.username.toString().trim().toLowerCase() === userInput;
+                const rawPassMatches = u.password && u.password.toString().trim() === passVal;
+                const hashMatches = u.passwordHash && u.passwordHash === inputHash;
+                return nameMatches && (rawPassMatches || hashMatches);
+            });
         }
 
         if (!matched && usersSource.length > 0) {
@@ -1671,7 +1689,7 @@
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
                     <td style="font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
                     <td>
-                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
+                        <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
                     </td>
                 </tr>
             `);
@@ -1942,12 +1960,12 @@
         });
     }
 
-    // دالة طباعة الباركود المحسنة (اسم المركز + الباركود ورقم الصنف + اسم الصنف والسعر)
+    // دالة طباعة الباركود المصححة بدقة لطابعات Xprinter (40mm × 10mm) دون أي انقصاص للبيانات
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
 
-        const win = window.open('', '', 'width=300,height=300');
+        const win = window.open('', '', 'width=320,height=250');
         win.document.write(`
             <!DOCTYPE html>
             <html><head><title>Print Label</title>
@@ -1964,7 +1982,7 @@
                     margin: 0;
                     padding: 0;
                     background: #fff;
-                    font-family: system-ui, sans-serif;
+                    font-family: system-ui, -apple-system, sans-serif;
                     overflow: hidden;
                     direction: rtl;
                 }
@@ -1975,7 +1993,7 @@
                     flex-direction: column;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 0.2mm 1mm;
+                    padding: 0.2mm 0.5mm;
                     box-sizing: border-box;
                 }
                 .store-title {
@@ -1987,14 +2005,14 @@
                     height: 1.5mm;
                 }
                 .barcode-box {
-                    width: 38mm;
+                    width: 39mm;
                     height: 5.5mm;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                 }
                 .bottom-info {
-                    width: 38mm;
+                    width: 39mm;
                     height: 2.5mm;
                     display: flex;
                     justify-content: space-between;
@@ -2008,14 +2026,19 @@
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    max-width: 25mm;
+                    max-width: 18mm;
+                }
+                .barcode-num {
+                    font-family: monospace;
+                    font-size: 4.5pt;
+                    text-align: center;
                 }
                 .prod-price {
                     font-size: 5pt;
                 }
                 svg {
-                    width: 36mm !important;
-                    height: 5mm !important;
+                    width: 38mm !important;
+                    height: 5.5mm !important;
                 }
             </style></head>
             <body>
@@ -2026,6 +2049,7 @@
                     </div>
                     <div class="bottom-info">
                         <span class="prod-name">${prod.n}</span>
+                        <span class="barcode-num">${prod.barcode}</span>
                         <span class="prod-price">${(prod.sp || 0).toFixed(0)} ج</span>
                     </div>
                 </div>
@@ -2035,10 +2059,10 @@
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
                             width: 1.2,
-                            height: 16,
-                            fontSize: 8,
+                            height: 18,
+                            fontSize: 0,
                             margin: 0,
-                            displayValue: true
+                            displayValue: false
                         });
                         setTimeout(function() { window.print(); window.close(); }, 300);
                     };

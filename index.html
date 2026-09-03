@@ -76,9 +76,6 @@
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
         .login-card { background: white; padding: 20px; border-radius: 12px; text-align: center; width: 92%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
-        .pass-container { position: relative; width: 100%; margin-bottom: 12px; }
-        .pass-toggle-btn { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; background: none; border: none; font-size: 1.1rem; }
-
         .totals-box { background: #fcf8e3; color: #1e3c72; padding: 10px; border-radius: 8px; margin-top: 10px; border: 2px solid #3498db; }
         .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; font-size: 0.8rem; text-align: center; }
         .total-item { background: #ffffff; padding: 6px 4px; border-radius: 6px; border: 1px solid #bfdbfe; color: #1e3c72; font-weight: bold; }
@@ -1949,86 +1946,118 @@
         });
     }
 
-    // دالة طباعة الباركود المباشرة والحرارية باستخدام Canvas الرسم المضمون 100%
+    // دالة طباعة الباركود المباشرة والسريعة والمضمونة للاستيكر (40mm × 10mm)
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
 
-        // إنشاء لوحة رسم مؤقتة لتحويل الملصق لصورة واضحة وجاهزة بالطول والعرض المطلوبين
-        const canvas = document.createElement('canvas');
-        canvas.width = 400; // دقة عالية 40mm
-        canvas.height = 100; // دقة عالية 10mm
-        const ctx = canvas.getContext('2d');
+        const win = window.open('', '_blank', 'width=400,height=300');
+        if (!win) return alert("⚠️ يرجى السماح بتشغيل النوافذ المنبثقة (Pop-ups) للطباعة!");
 
-        // رسم خلفية بيضاء
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // 1. رسم اسم المركز في الأعلى
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 22px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('El Sayeh Store ⚙️', 200, 22);
-
-        // 2. توليد خطوط الباركود وتحويلها لصورة ودمجها بمنتصف الصورة
-        const tempSvg = document.createElement('svg');
-        JsBarcode(tempSvg, prod.barcode, {
-            format: "CODE128",
-            width: 2,
-            height: 38,
-            fontSize: 0,
-            margin: 0,
-            displayValue: false
-        });
-
-        const xml = new XMLSerializer().serializeToString(tempSvg);
-        const svgImg = new Image();
-        svgImg.src = 'data:image/svg+xml;base64,' + btoa(xml);
-
-        svgImg.onload = function() {
-            // رسم الباركود في المنتصف
-            ctx.drawImage(svgImg, 20, 26, 360, 42);
-
-            // 3. رسم السطر السفلي (اسم الصنف + الرقم + السعر)
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 20px system-ui, sans-serif';
-
-            // اسم المنتج يمين
-            ctx.textAlign = 'right';
-            const shortName = prod.n.length > 12 ? prod.n.substring(0, 11) + '..' : prod.n;
-            ctx.fillText(shortName, 390, 92);
-
-            // رقم الباركود منتصف
-            ctx.textAlign = 'center';
-            ctx.fillText(prod.barcode, 200, 92);
-
-            // السعر يسار
-            ctx.textAlign = 'left';
-            ctx.fillText((prod.sp || 0).toFixed(0) + ' ج', 10, 92);
-
-            // تحويل لوحة الرسم لصورة وبثها للطباعة
-            const imgDataUrl = canvas.toDataURL('image/png');
-            const win = window.open('', '', 'width=350,height=250');
-            win.document.write(`
-                <!DOCTYPE html>
-                <html><head><title>Print Label</title>
-                <style>
-                    @page { size: 40mm 10mm landscape; margin: 0; }
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { width: 40mm; height: 10mm; display: flex; justify-content: center; align-items: center; background: #fff; }
-                    img { width: 40mm; height: 10mm; object-fit: contain; }
-                </style></head>
-                <body>
-                    <img src="${imgDataUrl}" />
-                    <script>
-                        window.onload = function() {
-                            setTimeout(function() { window.print(); window.close(); }, 250);
-                        };
-                    <\/script>
-                </body></html>
-            `);
-            win.document.close();
-        };
+        win.document.write(`
+            <!DOCTYPE html>
+            <html><head><title>Print Label</title>
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+            <style>
+                @page {
+                    size: 40mm 10mm landscape;
+                    margin: 0;
+                }
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                html, body {
+                    width: 40mm;
+                    height: 10mm;
+                    margin: 0;
+                    padding: 0;
+                    background: #fff;
+                    font-family: Arial, sans-serif;
+                    overflow: hidden;
+                    direction: rtl;
+                }
+                .label-container {
+                    width: 40mm;
+                    height: 10mm;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0.2mm 0.5mm;
+                    box-sizing: border-box;
+                }
+                .store-title {
+                    font-size: 5pt;
+                    font-weight: bold;
+                    color: #000;
+                    text-align: center;
+                    line-height: 1;
+                    height: 2mm;
+                }
+                .barcode-box {
+                    width: 39mm;
+                    height: 5mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .bottom-info {
+                    width: 39mm;
+                    height: 2.8mm;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 5pt;
+                    font-weight: bold;
+                    color: #000;
+                    line-height: 1;
+                }
+                .prod-name {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 14mm;
+                }
+                .barcode-num {
+                    font-family: monospace;
+                    font-size: 4.8pt;
+                    text-align: center;
+                }
+                .prod-price {
+                    font-size: 5pt;
+                }
+                svg {
+                    width: 38mm !important;
+                    height: 5mm !important;
+                }
+            </style></head>
+            <body>
+                <div class="label-container">
+                    <div class="store-title">El Sayeh Store ⚙️</div>
+                    <div class="barcode-box">
+                        <svg id="barcode-img"></svg>
+                    </div>
+                    <div class="bottom-info">
+                        <span class="prod-name">${prod.n}</span>
+                        <span class="barcode-num">${prod.barcode}</span>
+                        <span class="prod-price">${(prod.sp || 0).toFixed(0)} ج</span>
+                    </div>
+                </div>
+                
+                <script>
+                    window.onload = function() {
+                        JsBarcode("#barcode-img", "${prod.barcode}", {
+                            format: "CODE128",
+                            width: 1.2,
+                            height: 18,
+                            fontSize: 0,
+                            margin: 0,
+                            displayValue: false
+                        });
+                        setTimeout(function() { window.print(); window.close(); }, 300);
+                    };
+                <\/script>
+            </body></html>
+        `);
+        win.document.close();
     }
 
     function printSingleReceipt(invId) {

@@ -984,7 +984,7 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    // دالة المطابقة الصحيحة لحسابات الشيت أونلاين
+    // دالة المطابقة الشاملة لحسابات الشيت أونلاين والأوفلاين
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
@@ -1942,7 +1942,7 @@
         });
     }
 
-    // دالة طباعة الباركود المخصصة لطابعات Xprinter XP-235B الحرارية على مقاس 10mm × 40mm
+    // دالة طباعة الباركود المحسنة (اسم المركز + الباركود ورقم الصنف + اسم الصنف والسعر)
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -1957,6 +1957,7 @@
                     size: 40mm 10mm landscape;
                     margin: 0;
                 }
+                * { box-sizing: border-box; margin: 0; padding: 0; }
                 html, body {
                     width: 40mm;
                     height: 10mm;
@@ -1971,39 +1972,61 @@
                     width: 40mm;
                     height: 10mm;
                     display: flex;
-                    flex-direction: row;
+                    flex-direction: column;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 0 1mm;
+                    padding: 0.2mm 1mm;
                     box-sizing: border-box;
                 }
-                .barcode-box {
-                    width: 28mm;
-                    height: 9mm;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .price-box {
-                    width: 10mm;
-                    font-size: 8pt;
+                .store-title {
+                    font-size: 4pt;
                     font-weight: bold;
                     color: #000;
                     text-align: center;
                     line-height: 1;
+                    height: 1.5mm;
+                }
+                .barcode-box {
+                    width: 38mm;
+                    height: 5.5mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .bottom-info {
+                    width: 38mm;
+                    height: 2.5mm;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 4.5pt;
+                    font-weight: bold;
+                    color: #000;
+                    line-height: 1;
+                }
+                .prod-name {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 25mm;
+                }
+                .prod-price {
+                    font-size: 5pt;
                 }
                 svg {
-                    width: 27mm !important;
-                    height: 8.5mm !important;
+                    width: 36mm !important;
+                    height: 5mm !important;
                 }
             </style></head>
             <body>
                 <div class="label-container">
+                    <div class="store-title">El Sayeh Store ⚙️</div>
                     <div class="barcode-box">
                         <svg id="barcode-img"></svg>
                     </div>
-                    <div class="price-box">
-                        ${(prod.sp || 0).toFixed(0)}ج
+                    <div class="bottom-info">
+                        <span class="prod-name">${prod.n}</span>
+                        <span class="prod-price">${(prod.sp || 0).toFixed(0)} ج</span>
                     </div>
                 </div>
                 
@@ -2011,11 +2034,11 @@
                     window.onload = function() {
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
-                            width: 1.5,
-                            height: 25,
-                            fontSize: 0,
+                            width: 1.2,
+                            height: 16,
+                            fontSize: 8,
                             margin: 0,
-                            displayValue: false
+                            displayValue: true
                         });
                         setTimeout(function() { window.print(); window.close(); }, 300);
                     };

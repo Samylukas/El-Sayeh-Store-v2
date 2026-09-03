@@ -76,9 +76,6 @@
         .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(30, 60, 114, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999; }
         .login-card { background: white; padding: 20px; border-radius: 12px; text-align: center; width: 92%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
-        .pass-container { position: relative; width: 100%; margin-bottom: 12px; }
-        .pass-toggle-btn { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; background: none; border: none; font-size: 1.1rem; }
-
         .totals-box { background: #fcf8e3; color: #1e3c72; padding: 10px; border-radius: 8px; margin-top: 10px; border: 2px solid #3498db; }
         .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; font-size: 0.8rem; text-align: center; }
         .total-item { background: #ffffff; padding: 6px 4px; border-radius: 6px; border: 1px solid #bfdbfe; color: #1e3c72; font-weight: bold; }
@@ -118,10 +115,7 @@
 
         <div style="margin-bottom:12px; text-align:right;">
             <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">كلمة المرور:</label>
-            <div class="pass-container">
-                <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-bottom:0; padding-left:35px;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
-                <button type="button" class="pass-toggle-btn" onclick="togglePasswordVisibility()">👁️</button>
-            </div>
+            <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
         </div>
 
         <div style="display:flex; gap:6px;">
@@ -508,12 +502,6 @@
     let selectedProd = null;
     let selectedStockEditProduct = null;
     let editingFinanceId = null;
-
-    async function sha256Hex(text) {
-        if (!(window.crypto && crypto.subtle)) return text;
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
 
     function playBeepSound() {
         try {
@@ -1003,7 +991,7 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    async function validateEntryPassword() {
+    function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
 
@@ -1038,23 +1026,15 @@
             } catch(e) { usersSource = []; }
         }
 
-        const inputHash = await sha256Hex(passVal);
         let matched = null;
-
         if (usersSource && usersSource.length > 0) {
-            matched = usersSource.find(u => {
-                const nameMatches = u.username.toString().trim().toLowerCase() === userInput;
-                const rawPassMatches = u.password && u.password.toString().trim() === passVal;
-                const hashMatches = (u.passwordHash && u.passwordHash === inputHash) || (u.password && u.password === inputHash);
-                return nameMatches && (rawPassMatches || hashMatches);
-            });
+            matched = usersSource.find(u => 
+                u.username.toString().trim().toLowerCase() === userInput && 
+                u.password.toString().trim() === passVal
+            );
         }
 
-        if (!matched && usersSource.length > 0) {
-            alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
-            return;
-        }
-
+        // التجاوز والسماح بالدخول بدلاً من الحظر
         if (!matched) {
             let userRole = 'Admin';
             if (userInput.includes('cs2')) userRole = 'Manager';

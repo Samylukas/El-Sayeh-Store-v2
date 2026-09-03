@@ -445,7 +445,7 @@
         </div>
     </div>
 
-    <!-- 7. المالية والمصروفات المحدثة بالكامل مع كارت الإجماليات والصافي -->
+    <!-- 7. المالية والمصروفات -->
     <div id="financeTab" class="tab-content admin-only">
         <div class="section-title">💵 المصروفات والإيرادات (بالجنيه المصري)</div>
         <div class="card">
@@ -458,7 +458,6 @@
             <button class="btn btn-purple" style="margin-top: 8px;" onclick="saveFinanceEntry()">حفظ الحركة المالية 💾</button>
         </div>
 
-        <!-- كارت إجماليات المصروفات والصافي -->
         <div id="financeSummaryBox" class="totals-box" style="margin-top:10px; margin-bottom:10px;">
             <div class="totals-grid">
                 <div class="total-item">إجمالي المصروفات <span id="finTotalExpensesVal" style="color:#e74c3c;">0.00 ج.م</span></div>
@@ -1041,7 +1040,6 @@
         updateLowStockAlert();
     }
 
-    // تطبيق صلاحيات المستخدمين والأدوار بدقة عالية
     function applyRolePermissions() {
         const adminElements = document.querySelectorAll('.admin-only');
         const managerElements = document.querySelectorAll('.manager-only');
@@ -1056,11 +1054,9 @@
             adminElements.forEach(el => el.style.display = '');
             managerElements.forEach(el => el.style.display = '');
         } else if (isCs2) {
-            // cs2 يقدر يبيع ويعدل المخزون فقط
             adminElements.forEach(el => el.style.display = 'none');
             managerElements.forEach(el => el.style.display = '');
         } else {
-            // الكاشير يقدر يبيع فقط
             adminElements.forEach(el => el.style.display = 'none');
             managerElements.forEach(el => el.style.display = 'none');
         }
@@ -1663,7 +1659,7 @@
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
                     <td style="font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
                     <td>
-                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
+                        <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
                     </td>
                 </tr>
             `);
@@ -1934,7 +1930,7 @@
         });
     }
 
-    // دالة طباعة الباركود للملصق المشقوق 40 مم × 10 مم
+    // دالة طباعة الباركود المخصصة لطابعات Xprinter XP-235B على مقاس 1 سم عرض × 4 سم طول (10mm x 40mm)
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -1945,56 +1941,53 @@
             <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
             <style>
                 @page {
-                    size: 40mm 10mm landscape;
+                    size: 10mm 40mm portrait;
                     margin: 0;
                 }
                 * { box-sizing: border-box; margin: 0; padding: 0; }
                 body {
-                    width: 40mm;
-                    height: 10mm;
+                    width: 10mm;
+                    height: 40mm;
                     font-family: system-ui, sans-serif;
                     display: flex;
-                    flex-direction: row;
-                    justify-content: space-between;
+                    flex-direction: column;
+                    justify-content: space-around;
                     align-items: center;
-                    padding: 0 1mm;
+                    padding: 0.5mm 0;
                     background: #fff;
                     overflow: hidden;
                     direction: rtl;
                 }
-                .text-side {
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: flex-start;
-                    width: 18mm;
-                    overflow: hidden;
-                }
-                .prod-title { font-size: 5.5pt; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: #000; line-height: 1.1; }
-                .prod-price { font-size: 6pt; font-weight: bold; color: #000; margin-top: 1px; }
                 .barcode-side {
-                    width: 20mm;
+                    width: 9.5mm;
                     display: flex;
                     justify-content: center;
                     align-items: center;
                 }
-                svg { width: 19mm !important; height: 8mm !important; }
+                .price-side {
+                    font-size: 7pt;
+                    font-weight: bold;
+                    color: #000;
+                    text-align: center;
+                    line-height: 1;
+                    word-break: break-all;
+                }
+                svg { width: 9.5mm !important; height: 33mm !important; }
             </style></head>
             <body>
-                <div class="text-side">
-                    <div class="prod-title">${prod.n}</div>
-                    <div class="prod-price">${(prod.sp || 0).toFixed(2)} ج.م</div>
-                </div>
                 <div class="barcode-side">
                     <svg id="barcode-img"></svg>
+                </div>
+                <div class="price-side">
+                    ${(prod.sp || 0).toFixed(0)}ج
                 </div>
                 
                 <script>
                     window.onload = function() {
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
-                            width: 1.2,
-                            height: 30,
+                            width: 1.3,
+                            height: 33,
                             fontSize: 0,
                             margin: 0,
                             displayValue: false

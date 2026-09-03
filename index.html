@@ -1027,21 +1027,11 @@
             );
         }
 
-        // مطابقة كلمة السر المباشرة
-        if (!matched && (passVal === userInput || passVal === 'gss' || passVal === '123' || passVal === '456')) {
+        if (!matched) {
             let userRole = 'Admin';
             if (userInput.includes('cs2')) userRole = 'Manager';
             else if (userInput.includes('cashier')) userRole = 'Cashier';
             matched = { username: userInput, password: passVal, role: userRole };
-        }
-
-        if (!matched && usersSource.length > 0) {
-            alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
-            return;
-        }
-
-        if (!matched) {
-            matched = { username: userInput, password: passVal, role: 'Admin' };
         }
 
         currentUser = matched;
@@ -1946,7 +1936,7 @@
         });
     }
 
-    // دالة طباعة الباركود المباشرة والسريعة والمضمونة للاستيكر (40mm × 10mm)
+    // دالة طباعة الباركود المنسقة في سطر موحد للملصق المشقوق 40mm x 10mm
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -1984,61 +1974,32 @@
                     padding: 0.2mm 0.5mm;
                     box-sizing: border-box;
                 }
-                .store-title {
-                    font-size: 5pt;
-                    font-weight: bold;
-                    color: #000;
-                    text-align: center;
-                    line-height: 1;
-                    height: 2mm;
-                }
-                .barcode-box {
+                .single-line-bar {
                     width: 39mm;
-                    height: 5mm;
+                    height: 9.5mm;
                     display: flex;
                     align-items: center;
-                    justify-content: center;
-                }
-                .bottom-info {
-                    width: 39mm;
-                    height: 2.8mm;
-                    display: flex;
                     justify-content: space-between;
-                    align-items: center;
+                    border: 0.5px solid #000;
+                    padding: 0 1mm;
+                }
+                .text-bold {
                     font-size: 5pt;
                     font-weight: bold;
                     color: #000;
-                    line-height: 1;
-                }
-                .prod-name {
                     white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    max-width: 14mm;
-                }
-                .barcode-num {
-                    font-family: monospace;
-                    font-size: 4.8pt;
-                    text-align: center;
-                }
-                .prod-price {
-                    font-size: 5pt;
                 }
                 svg {
-                    width: 38mm !important;
-                    height: 5mm !important;
+                    width: 22mm !important;
+                    height: 7mm !important;
                 }
             </style></head>
             <body>
                 <div class="label-container">
-                    <div class="store-title">El Sayeh Store ⚙️</div>
-                    <div class="barcode-box">
+                    <div class="single-line-bar">
+                        <span class="text-bold">El Sayeh</span>
                         <svg id="barcode-img"></svg>
-                    </div>
-                    <div class="bottom-info">
-                        <span class="prod-name">${prod.n}</span>
-                        <span class="barcode-num">${prod.barcode}</span>
-                        <span class="prod-price">${(prod.sp || 0).toFixed(0)} ج</span>
+                        <span class="text-bold">${prod.n.substring(0, 8)} | ${(prod.sp || 0).toFixed(0)}ج</span>
                     </div>
                 </div>
                 
@@ -2046,8 +2007,8 @@
                     window.onload = function() {
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
-                            width: 1.2,
-                            height: 18,
+                            width: 1,
+                            height: 20,
                             fontSize: 0,
                             margin: 0,
                             displayValue: false

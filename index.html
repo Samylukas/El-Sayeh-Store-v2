@@ -991,7 +991,6 @@
         const userInput = userSelect ? userSelect.value.trim().toLowerCase() : 'admin';
         const passVal = passInput ? passInput.value.toString().trim() : '';
 
-        // كود ماستر سريع
         if (passVal === '852') {
             currentUser = { username: userInput, password: passVal, role: 'Admin' };
             document.getElementById('loginOverlay').style.display = 'none';
@@ -1665,7 +1664,7 @@
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
                     <td style="font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
                     <td>
-                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
+                        <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
                     </td>
                 </tr>
             `);
@@ -1936,13 +1935,13 @@
         });
     }
 
-    // دالة طباعة الباركود المنسقة في سطر موحد للملصق المشقوق 40mm x 10mm
+    // دالة طباعة الباركود المنسقة رأسياً بوضوح لتظهر كل البيانات دون أي تداخل
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
 
-        const win = window.open('', '_blank', 'width=400,height=300');
-        if (!win) return alert("⚠️ يرجى السماح بتشغيل النوافذ المنبثقة (Pop-ups) للطباعة!");
+        const win = window.open('', '_blank', 'width=350,height=250');
+        if (!win) return alert("⚠️ يرجى السماح بالنوافذ المنبثقة (Pop-ups) للطباعة!");
 
         win.document.write(`
             <!DOCTYPE html>
@@ -1960,46 +1959,71 @@
                     margin: 0;
                     padding: 0;
                     background: #fff;
-                    font-family: Arial, sans-serif;
+                    font-family: Arial, Helvetica, sans-serif;
                     overflow: hidden;
                     direction: rtl;
                 }
-                .label-container {
+                .label-card {
                     width: 40mm;
                     height: 10mm;
                     display: flex;
                     flex-direction: column;
-                    align-items: center;
                     justify-content: space-between;
-                    padding: 0.2mm 0.5mm;
+                    align-items: center;
+                    padding: 0.3mm 0.8mm;
                     box-sizing: border-box;
                 }
-                .single-line-bar {
-                    width: 39mm;
-                    height: 9.5mm;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    border: 0.5px solid #000;
-                    padding: 0 1mm;
-                }
-                .text-bold {
-                    font-size: 5pt;
+                .store-name {
+                    font-size: 4pt;
                     font-weight: bold;
                     color: #000;
+                    line-height: 1;
+                    margin-top: 0.2mm;
+                }
+                .barcode-area {
+                    width: 38mm;
+                    height: 5.5mm;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .bottom-bar {
+                    width: 38mm;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 4.5pt;
+                    font-weight: bold;
+                    color: #000;
+                    line-height: 1;
+                    margin-bottom: 0.2mm;
+                }
+                .prod-title {
                     white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 24mm;
+                    text-align: right;
+                }
+                .prod-price {
+                    font-size: 5pt;
+                    text-align: left;
+                    max-width: 13mm;
                 }
                 svg {
-                    width: 22mm !important;
-                    height: 7mm !important;
+                    width: 38mm !important;
+                    height: 5.5mm !important;
                 }
             </style></head>
             <body>
-                <div class="label-container">
-                    <div class="single-line-bar">
-                        <span class="text-bold">El Sayeh</span>
+                <div class="label-card">
+                    <div class="store-name">El Sayeh Store ⚙️</div>
+                    <div class="barcode-area">
                         <svg id="barcode-img"></svg>
-                        <span class="text-bold">${prod.n.substring(0, 8)} | ${(prod.sp || 0).toFixed(0)}ج</span>
+                    </div>
+                    <div class="bottom-bar">
+                        <span class="prod-title">${prod.n}</span>
+                        <span class="prod-price">${(prod.sp || 0).toFixed(0)} ج</span>
                     </div>
                 </div>
                 
@@ -2007,11 +2031,12 @@
                     window.onload = function() {
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
-                            width: 1,
-                            height: 20,
-                            fontSize: 0,
+                            width: 1.1,
+                            height: 16,
+                            fontSize: 7.5,
+                            textMargin: 0,
                             margin: 0,
-                            displayValue: false
+                            displayValue: true
                         });
                         setTimeout(function() { window.print(); window.close(); }, 300);
                     };

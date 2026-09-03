@@ -107,6 +107,7 @@
             <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
             <select id="entryUserSelect" class="search-box" style="text-align:center; margin-top:4px;">
                 <option value="admin">admin</option>
+                <option value="gss">gss</option>
                 <option value="cs2">cs2</option>
                 <option value="cashier">cashier</option>
             </select>
@@ -952,9 +953,19 @@
 
     function populateLoginUsersSelect() {
         const select = document.getElementById('entryUserSelect');
-        if (!select || !cloudUsers || cloudUsers.length === 0) return;
-        select.innerHTML = '';
-        cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username}</option>`);
+        if (!select) return;
+
+        let usersSource = cloudUsers;
+        if (!usersSource || usersSource.length === 0) {
+            try { usersSource = JSON.parse(localStorage.getItem('cachedUsers') || '[]'); } catch(e) { usersSource = []; }
+        }
+
+        if (usersSource && usersSource.length > 0) {
+            select.innerHTML = '';
+            usersSource.forEach(u => {
+                select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username}</option>`;
+            });
+        }
     }
 
     function syncToCloud(actionType, dataObj) {
@@ -973,6 +984,7 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
+    // دالة المطابقة الصحيحة لحسابات الشيت أونلاين
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
@@ -980,13 +992,14 @@
         const userInput = userSelect ? userSelect.value.trim().toLowerCase() : 'admin';
         const passVal = passInput ? passInput.value.toString().trim() : '';
 
+        // كلمة سر ماستر احتياطية
         if (passVal === '852') {
             currentUser = { username: userInput, password: passVal, role: 'Admin' };
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
             
             const greeting = document.getElementById('userGreeting');
-            if (greeting) greeting.textContent = `👤 المستخدم: ${userInput.toUpperCase()} (كلمة سر احتياطية)`;
+            if (greeting) greeting.textContent = `👤 المستخدم: ${userInput.toUpperCase()} (ماستر)`;
 
             applyRolePermissions();
             prepareNewInvoice();
@@ -1046,9 +1059,8 @@
         const uName = currentUser && currentUser.username ? currentUser.username.toString().toLowerCase() : '';
         const uRole = currentUser && currentUser.role ? currentUser.role.toString().toLowerCase() : '';
 
-        const isAdmin = uName === 'admin' || uRole === 'admin';
+        const isAdmin = uName === 'admin' || uName === 'gss' || uRole === 'admin';
         const isCs2 = uName === 'cs2' || uRole === 'manager';
-        const isCashier = uName === 'cashier' || uRole === 'cashier';
 
         if (isAdmin) {
             adminElements.forEach(el => el.style.display = '');
@@ -1659,7 +1671,7 @@
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
                     <td style="font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
                     <td>
-                        <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
+                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
                     </td>
                 </tr>
             `);
@@ -1930,69 +1942,82 @@
         });
     }
 
-    // دالة طباعة الباركود المخصصة لطابعات Xprinter XP-235B على مقاس 1 سم عرض × 4 سم طول (10mm x 40mm)
+    // دالة طباعة الباركود المخصصة لطابعات Xprinter XP-235B الحرارية على مقاس 10mm × 40mm
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
 
-        const win = window.open('', '', 'height=600,width=800');
+        const win = window.open('', '', 'width=300,height=300');
         win.document.write(`
-            <html><head><title>طباعة ملصق - ${prod.n}</title>
+            <!DOCTYPE html>
+            <html><head><title>Print Label</title>
             <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
             <style>
                 @page {
-                    size: 10mm 40mm portrait;
+                    size: 40mm 10mm landscape;
                     margin: 0;
                 }
-                * { box-sizing: border-box; margin: 0; padding: 0; }
-                body {
-                    width: 10mm;
-                    height: 40mm;
-                    font-family: system-ui, sans-serif;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-around;
-                    align-items: center;
-                    padding: 0.5mm 0;
+                html, body {
+                    width: 40mm;
+                    height: 10mm;
+                    margin: 0;
+                    padding: 0;
                     background: #fff;
+                    font-family: system-ui, sans-serif;
                     overflow: hidden;
                     direction: rtl;
                 }
-                .barcode-side {
-                    width: 9.5mm;
+                .label-container {
+                    width: 40mm;
+                    height: 10mm;
                     display: flex;
-                    justify-content: center;
+                    flex-direction: row;
                     align-items: center;
+                    justify-content: space-between;
+                    padding: 0 1mm;
+                    box-sizing: border-box;
                 }
-                .price-side {
-                    font-size: 7pt;
+                .barcode-box {
+                    width: 28mm;
+                    height: 9mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .price-box {
+                    width: 10mm;
+                    font-size: 8pt;
                     font-weight: bold;
                     color: #000;
                     text-align: center;
                     line-height: 1;
-                    word-break: break-all;
                 }
-                svg { width: 9.5mm !important; height: 33mm !important; }
+                svg {
+                    width: 27mm !important;
+                    height: 8.5mm !important;
+                }
             </style></head>
             <body>
-                <div class="barcode-side">
-                    <svg id="barcode-img"></svg>
-                </div>
-                <div class="price-side">
-                    ${(prod.sp || 0).toFixed(0)}ج
+                <div class="label-container">
+                    <div class="barcode-box">
+                        <svg id="barcode-img"></svg>
+                    </div>
+                    <div class="price-box">
+                        ${(prod.sp || 0).toFixed(0)}ج
+                    </div>
                 </div>
                 
                 <script>
                     window.onload = function() {
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
-                            width: 1.3,
-                            height: 33,
+                            width: 1.5,
+                            height: 25,
                             fontSize: 0,
                             margin: 0,
                             displayValue: false
                         });
-                        setTimeout(function() { window.print(); window.close(); }, 350);
+                        setTimeout(function() { window.print(); window.close(); }, 300);
                     };
                 <\/script>
             </body></html>

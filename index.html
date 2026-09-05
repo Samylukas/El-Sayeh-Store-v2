@@ -291,9 +291,9 @@
         <div class="section-title" style="margin-top: 15px;">📄 أصناف الفاتورة الحالية</div>
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>الشركاء</th><th>الكمية</th><th>السعر التجاري</th><th>سعر البيع</th><th>الإجمالي</th><th>البائع</th><th>إجراء</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>التصنيف</th><th>الشركاء</th><th>الكمية</th><th>السعر التجاري</th><th>سعر البيع</th><th>الإجمالي</th><th>البائع</th><th>إجراء</th></tr>
             </thead>
-            <tbody id="invoiceTableBody"><tr><td colspan="9">لم يتم إضافة أصناف بعد</td></tr></tbody>
+            <tbody id="invoiceTableBody"><tr><td colspan="10">لم يتم إضافة أصناف بعد</td></tr></tbody>
         </table></div>
 
         <div class="totals-box" style="margin-top:8px;">
@@ -313,7 +313,7 @@
     <!-- 2. تفاصيل المخزون -->
     <div id="stockTab" class="tab-content manager-only">
         <div class="section-title">📦 تفاصيل المخزون والباركود والشركاء</div>
-        <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة أو الباركود..." oninput="filterStockTable(this.value)">
+        <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة، التصنيف أو الباركود..." oninput="filterStockTable(this.value)">
 
         <div id="stockScannerContainer" class="scanner-box" style="margin-top:6px;">
             <div id="stockCameraReader" class="camera-div"></div>
@@ -322,7 +322,7 @@
 
         <div class="table-responsive"><table>
             <thead>
-                <tr><th>#</th><th>اسم القطعة</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th>خيارات وإجراءات</th></tr>
+                <tr><th>#</th><th>اسم القطعة</th><th>التصنيف</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>شريك 1</th><th>شريك 2</th><th>الباركود</th><th>الصلاحية</th><th>المورد</th><th>خيارات وإجراءات</th></tr>
             </thead>
             <tbody id="stockTableBody"></tbody>
         </table></div>
@@ -335,6 +335,8 @@
             <div class="form-grid">
                 <div class="field-box"><label>اسم القطعة:</label><input type="text" id="newProdName" list="allProductsDatalist" autocomplete="off" placeholder="اسم القطعة..." oninput="autoFillProductFields(this.value)"></div>
                 <datalist id="allProductsDatalist"></datalist>
+                <div class="field-box"><label>التصنيف / القسم:</label><input type="text" id="newProdCategory" list="categoriesDatalist" placeholder="فلاتر، فرامل، سيرفيس..."></div>
+                <datalist id="categoriesDatalist"></datalist>
                 <div class="field-box"><label>المقاس:</label><input type="text" id="newProdSize" placeholder="المقاس..."></div>
                 <div class="field-box"><label>الغرض:</label><input type="text" id="newProdPurpose" placeholder="الغرض..."></div>
                 <div class="field-box"><label>السعر التجاري (ج.م):</label><input type="number" id="newProdPrice" placeholder="0.00"></div>
@@ -409,7 +411,7 @@
 
     <!-- 6. التقارير وتفصيل المبيعات -->
     <div id="reportsTab" class="tab-content admin-only">
-        <div class="section-title">📊 تقارير المبيعات وتفصيل أرباح الشركاء والفرع الرئيسي</div>
+        <div class="section-title">📊 تقارير المبيعات وتفصيل أرباح الشركاء والتصنيفات</div>
         <div class="card">
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                 <div>من: <input type="date" id="fromDate" style="font-size:0.75rem;"></div>
@@ -436,9 +438,19 @@
                 </div>
             </div>
 
+            <!-- تقرير مجمّع لكل تصنيف -->
+            <div class="section-title" style="margin-top: 12px; font-size:0.9rem;">📌 إجمالي المبيعات والأرباح مجمعة حسب التصنيف:</div>
+            <div class="table-responsive" style="margin-bottom:12px;"><table>
+                <thead>
+                    <tr><th>التصنيف / القسم</th><th>عدد القطع المباعة</th><th>إجمالي المبيعات (ج.م)</th><th>إجمالي الأرباح (ج.م)</th></tr>
+                </thead>
+                <tbody id="categoryReportBody"><tr><td colspan="4">لا توجد مبيعات مسجلة للتصنيفات في هذه الفترة</td></tr></tbody>
+            </table></div>
+
+            <div class="section-title" style="margin-top: 12px; font-size:0.9rem;">📝 تفاصيل الفواتير المسجلة:</div>
             <div class="table-responsive"><table>
                 <thead>
-                    <tr><th>#</th><th>الفاتورة</th><th>نوع الدفع / العميل</th><th>التاريخ والوقت</th><th>الأصناف</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th class="no-pdf">خيارات وإجراءات</th></tr>
+                    <tr><th>#</th><th>الفاتورة</th><th>نوع الدفع / العميل</th><th>التاريخ والوقت</th><th>الأصناف (الاسم والتصنيف)</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th class="no-pdf">خيارات وإجراءات</th></tr>
                 </thead>
                 <tbody id="savedInvoicesBody"></tbody>
             </table></div>
@@ -589,6 +601,7 @@
         }
         const matched = products.find(p => p.n && p.n.trim().toLowerCase() === val.trim().toLowerCase());
         if (matched) {
+            document.getElementById('newProdCategory').value = matched.category || '';
             document.getElementById('newProdSize').value = matched.size || '';
             document.getElementById('newProdPurpose').value = matched.purpose || '';
             document.getElementById('newProdPrice').value = matched.p || '';
@@ -614,8 +627,16 @@
 
     function updateProductsDatalist() {
         const list = document.getElementById('allProductsDatalist');
-        if (!list) return;
-        list.innerHTML = products.map(p => `<option value="${p.n}">`).join('');
+        if (list) {
+            list.innerHTML = products.map(p => `<option value="${p.n}">`).join('');
+        }
+        
+        const catList = document.getElementById('categoriesDatalist');
+        if (catList) {
+            let set = new Set();
+            products.forEach(p => { if (p.category) set.add(p.category.trim()); });
+            catList.innerHTML = Array.from(set).map(c => `<option value="${c}">`).join('');
+        }
     }
 
     function sendWhatsAppReminder(custName, registeredPhone) {
@@ -1177,6 +1198,7 @@
 
         if (isProductNameExists(newName, prod.n)) return alert(`⚠️ اسم المنتج (${newName}) مكرر وموجود بالنظام بالفعل!`);
 
+        const newCategory = prompt("التصنيف / القسم:", prod.category || "");
         const newSupplier = prompt("اسم المورد:", prod.supplier || "");
         const newSize = prompt("المقاس:", prod.size || "");
         const newPurpose = prompt("الغرض:", prod.purpose || "");
@@ -1186,13 +1208,14 @@
         const newP1 = prompt("اسم شريك 1:", prod.p1 || "");
         const newP2 = prompt("اسم شريك 2:", prod.p2 || "");
 
-        prod.n = newName; prod.supplier = newSupplier; prod.size = newSize; prod.purpose = newPurpose;
+        prod.n = newName; prod.category = newCategory; prod.supplier = newSupplier; prod.size = newSize; prod.purpose = newPurpose;
         prod.p = newP; prod.sp = newSp; prod.q = newQ;
         prod.p1 = newP1; prod.p2 = newP2;
 
         syncToCloud("updateSingleProduct", prod);
         alert(`✅ تم تحديث بيانات المنتج (${newName}) أونلاين بنجاح!`);
         renderStockTable();
+        updateProductsDatalist();
     }
 
     function deleteProductFromSystem(prodName) {
@@ -1211,6 +1234,7 @@
 
     function addNewProductToSystem() {
         const name = document.getElementById('newProdName').value.trim();
+        const category = document.getElementById('newProdCategory').value.trim();
         const supplier = document.getElementById('newProdSupplier').value.trim();
         const size = document.getElementById('newProdSize').value.trim();
         const purpose = document.getElementById('newProdPurpose').value.trim();
@@ -1238,6 +1262,7 @@
 
         let prodObj = { 
             n: name, 
+            category: category,
             supplier: supplier, 
             size: size, 
             purpose: purpose, 
@@ -1261,6 +1286,7 @@
         alert(`✅ تم تحديث مخزون الصنف (${name})! الكمية السابقة + المضافة = [${finalQty} قطعة] بالمخزن.`);
         
         document.getElementById('newProdName').value = '';
+        document.getElementById('newProdCategory').value = '';
         document.getElementById('newProdSupplier').value = '';
         document.getElementById('newProdSize').value = '';
         document.getElementById('newProdPurpose').value = '';
@@ -1287,6 +1313,7 @@
             <tr style="${isLow ? 'background:#fff0f0;' : ''}">
                 <td>${index + 1}</td>
                 <td style="font-weight:bold;">${i.n || '-'}</td>
+                <td style="font-weight:bold; color:#1e3c72;">${i.category || 'عام'}</td>
                 <td>${i.size || '-'}</td>
                 <td>${i.purpose || '-'}</td>
                 <td>${(i.p || 0).toFixed(2)}</td>
@@ -1315,6 +1342,7 @@
     function renderStockTable(filter = '') {
         const matched = products.filter(i => 
             (i.n && i.n.toLowerCase().includes(filter.toLowerCase())) || 
+            (i.category && i.category.toLowerCase().includes(filter.toLowerCase())) ||
             (i.barcode && i.barcode.toLowerCase().includes(filter.toLowerCase()))
         );
         renderStockTableCustom(matched);
@@ -1426,7 +1454,7 @@
         const commTotal = (selectedProd.p || 0) * qty;
 
         invoiceItems.push({
-            name: selectedProd.n, p1: selectedProd.p1 || '', p2: selectedProd.p2 || '',
+            name: selectedProd.n, category: selectedProd.category || 'عام', p1: selectedProd.p1 || '', p2: selectedProd.p2 || '',
             qty: qty, commUnitPrice: selectedProd.p || 0, sellUnitPrice: actualPrice,
             commTotal: commTotal, sellTotal: itemTotal, netProfit: itemTotal - commTotal,
             seller: currentUser ? currentUser.username : 'عام'
@@ -1441,12 +1469,12 @@
         const tbody = document.getElementById('invoiceTableBody');
         let subTotalEGP = 0;
         if (invoiceItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9">لم يتم إضافة أصناف بعد</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10">لم يتم إضافة أصناف بعد</td></tr>';
         } else {
             tbody.innerHTML = invoiceItems.map((item, index) => {
                 subTotalEGP += item.sellTotal;
                 let pStr = [item.p1, item.p2].filter(x => x && x.trim() !== "").join(', ');
-                return `<tr><td>${index + 1}</td><td style="font-weight:bold;">${item.name}</td><td>${pStr || 'الفرع الرئيسي'}</td><td>${item.qty}</td><td>${item.commUnitPrice.toFixed(2)}</td><td>${item.sellUnitPrice.toFixed(2)}</td><td style="font-weight:bold;">${item.sellTotal.toFixed(2)}</td><td>${item.seller}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem; margin:0;" onclick="removeInvoiceItem(${index})">حذف</button></td></tr>`;
+                return `<tr><td>${index + 1}</td><td style="font-weight:bold;">${item.name}</td><td style="color:#1e3c72;">${item.category || 'عام'}</td><td>${pStr || 'الفرع الرئيسي'}</td><td>${item.qty}</td><td>${item.commUnitPrice.toFixed(2)}</td><td>${item.sellUnitPrice.toFixed(2)}</td><td style="font-weight:bold;">${item.sellTotal.toFixed(2)}</td><td>${item.seller}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem; margin:0;" onclick="removeInvoiceItem(${index})">حذف</button></td></tr>`;
             }).join('');
         }
 
@@ -1494,7 +1522,7 @@
         invoiceItems.forEach(i => {
             totalSellRaw += i.sellTotal;
             totalComm += i.commTotal;
-            itemsSummaryText.push(`${i.name} | عدد: ${i.qty} | سعر: ${i.sellUnitPrice}`);
+            itemsSummaryText.push(`${i.name} [${i.category || 'عام'}] | عدد: ${i.qty} | سعر: ${i.sellUnitPrice}`);
         });
 
         let discValue = (totalSellRaw * discPercent) / 100;
@@ -1733,7 +1761,9 @@
 
         let totalSell = 0, totalComm = 0, totalNetProfit = 0;
         const tbody = document.getElementById('savedInvoicesBody');
+        const catTbody = document.getElementById('categoryReportBody');
         let reportRows = [];
+        let categoryMap = new Map();
 
         savedInvoices.forEach((inv) => {
             if (inv.date) {
@@ -1758,11 +1788,20 @@
                 let invComm = 0, invSell = 0, invProfit = 0;
 
                 filteredItems.forEach(i => {
-                    let pStr = [i.p1, i.p2].filter(x => x && x.trim() !== "").join(', ');
-                    itemsTextList.push(`• ${i.name || 'صنف'} (${i.qty}) - ${(i.sellTotal || 0).toFixed(2)} ج.م`);
+                    let catName = i.category || 'عام';
+                    itemsTextList.push(`• ${i.name} [${catName}] (${i.qty}) - ${(i.sellTotal || 0).toFixed(2)} ج.م`);
                     invComm += (i.commTotal || 0);
                     invSell += (i.sellTotal || 0);
                     invProfit += (i.netProfit || 0);
+
+                    // تجميع بيانات التصنيفات
+                    if (!categoryMap.has(catName)) {
+                        categoryMap.set(catName, { qty: 0, sellTotal: 0, netProfit: 0 });
+                    }
+                    let cData = categoryMap.get(catName);
+                    cData.qty += (parseInt(i.qty) || 1);
+                    cData.sellTotal += (i.sellTotal || 0);
+                    cData.netProfit += (i.netProfit || 0);
                 });
 
                 totalSell += invSell;
@@ -1790,6 +1829,26 @@
                 `);
             }
         });
+
+        // عرض تقرير التصنيفات
+        if (catTbody) {
+            if (categoryMap.size === 0) {
+                catTbody.innerHTML = '<tr><td colspan="4">لا توجد مبيعات مسجلة للتصنيفات في هذه الفترة</td></tr>';
+            } else {
+                let catRows = [];
+                categoryMap.forEach((cData, catName) => {
+                    catRows.push(`
+                        <tr>
+                            <td style="font-weight:bold; color:#1e3c72;">${catName}</td>
+                            <td style="font-weight:bold;">${cData.qty} قطعة</td>
+                            <td style="font-weight:bold; color:#27ae60;">${cData.sellTotal.toFixed(2)} ج.م</td>
+                            <td style="font-weight:bold; color:#8e44ad;">${cData.netProfit.toFixed(2)} ج.م</td>
+                        </tr>
+                    `);
+                });
+                catTbody.innerHTML = catRows.join('');
+            }
+        }
 
         let totalExpenses = 0, totalAddRevenues = 0;
         savedFinanceEntries.forEach(fe => {
@@ -1935,7 +1994,7 @@
         });
     }
 
-    // دالة طباعة الباركود المنسقة رأسياً بوضوح تظهر كل البيانات دون أي تداخل
+    // دالة طباعة الباركود المنسقة رأسياً بوضوح لمقاس (1.30in x 0.75in / 33mm x 19mm)
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -1949,13 +2008,13 @@
             <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
             <style>
                 @page {
-                    size: 40mm 10mm landscape;
+                    size: 33mm 19mm landscape;
                     margin: 0;
                 }
                 * { box-sizing: border-box; margin: 0; padding: 0; }
                 html, body {
-                    width: 40mm;
-                    height: 10mm;
+                    width: 33mm;
+                    height: 19mm;
                     margin: 0;
                     padding: 0;
                     background: #fff;
@@ -1964,35 +2023,35 @@
                     direction: rtl;
                 }
                 .label-card {
-                    width: 40mm;
-                    height: 10mm;
+                    width: 33mm;
+                    height: 19mm;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 0.3mm 0.8mm;
+                    padding: 0.5mm 0.8mm;
                     box-sizing: border-box;
                 }
                 .store-name {
-                    font-size: 4pt;
+                    font-size: 5.5pt;
                     font-weight: bold;
                     color: #000;
                     line-height: 1;
                     margin-top: 0.2mm;
                 }
                 .barcode-area {
-                    width: 38mm;
-                    height: 5.5mm;
+                    width: 31mm;
+                    height: 10mm;
                     display: flex;
                     justify-content: center;
                     align-items: center;
                 }
                 .bottom-bar {
-                    width: 38mm;
+                    width: 31mm;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    font-size: 4.5pt;
+                    font-size: 5.5pt;
                     font-weight: bold;
                     color: #000;
                     line-height: 1;
@@ -2002,17 +2061,17 @@
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    max-width: 24mm;
+                    max-width: 19mm;
                     text-align: right;
                 }
                 .prod-price {
-                    font-size: 5pt;
+                    font-size: 6pt;
                     text-align: left;
-                    max-width: 13mm;
+                    max-width: 11mm;
                 }
                 svg {
-                    width: 38mm !important;
-                    height: 5.5mm !important;
+                    width: 31mm !important;
+                    height: 10mm !important;
                 }
             </style></head>
             <body>
@@ -2032,8 +2091,8 @@
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
                             width: 1.1,
-                            height: 16,
-                            fontSize: 7.5,
+                            height: 25,
+                            fontSize: 9,
                             textMargin: 0,
                             margin: 0,
                             displayValue: true
@@ -2075,7 +2134,7 @@
             inv.items.forEach(i => {
                 receiptHTML += `
                     <tr>
-                        <td style="text-align:right; padding:3px 0;">${i.name}</td>
+                        <td style="text-align:right; padding:3px 0;">${i.name} [${i.category || 'عام'}]</td>
                         <td style="text-align:center; padding:3px 0;">${i.qty}</td>
                         <td style="text-align:left; padding:3px 0;">${i.sellTotal.toFixed(2)}</td>
                     </tr>

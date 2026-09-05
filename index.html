@@ -1695,7 +1695,7 @@
                     <td style="font-weight:bold;">${data.totalQty} قطعة</td>
                     <td style="font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td>
                     <td>
-                        <button class="btn btn-blue" style="padding:2px 5px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
+                        <button class="btn btn-blue" style="padding:2px 6px; font-size:0.68rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button>
                     </td>
                 </tr>
             `);
@@ -1997,7 +1997,7 @@
         });
     }
 
-    // دالة طباعة الباركود المنسقة رأسياً بوضوح لمقاس (1.30in x 0.75in / 33mm x 19mm)
+    // دالة طباعة الباركود لعرض اسم المركز والباركود المطبوع مع أرقامه فقط
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -2030,51 +2030,29 @@
                     height: 19mm;
                     display: flex;
                     flex-direction: column;
-                    justify-content: space-between;
+                    justify-content: center;
                     align-items: center;
-                    padding: 0.5mm 0.8mm;
+                    padding: 0.8mm;
                     box-sizing: border-box;
                 }
                 .store-name {
-                    font-size: 5.5pt;
+                    font-size: 6.5pt;
                     font-weight: bold;
                     color: #000;
                     line-height: 1;
-                    margin-top: 0.2mm;
+                    margin-bottom: 1mm;
+                    text-align: center;
                 }
                 .barcode-area {
                     width: 31mm;
-                    height: 10mm;
+                    height: 13mm;
                     display: flex;
                     justify-content: center;
                     align-items: center;
                 }
-                .bottom-bar {
-                    width: 31mm;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    font-size: 5.5pt;
-                    font-weight: bold;
-                    color: #000;
-                    line-height: 1;
-                    margin-bottom: 0.2mm;
-                }
-                .prod-title {
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    max-width: 19mm;
-                    text-align: right;
-                }
-                .prod-price {
-                    font-size: 6pt;
-                    text-align: left;
-                    max-width: 11mm;
-                }
                 svg {
                     width: 31mm !important;
-                    height: 10mm !important;
+                    height: 13mm !important;
                 }
             </style></head>
             <body>
@@ -2083,20 +2061,16 @@
                     <div class="barcode-area">
                         <svg id="barcode-img"></svg>
                     </div>
-                    <div class="bottom-bar">
-                        <span class="prod-title">${prod.n}</span>
-                        <span class="prod-price">${(prod.sp || 0).toFixed(0)} ج</span>
-                    </div>
                 </div>
                 
                 <script>
                     window.onload = function() {
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
-                            width: 1.1,
-                            height: 25,
-                            fontSize: 9,
-                            textMargin: 0,
+                            width: 1.2,
+                            height: 30,
+                            fontSize: 10,
+                            textMargin: 1,
                             margin: 0,
                             displayValue: true
                         });

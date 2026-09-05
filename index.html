@@ -617,14 +617,6 @@
         }
     }
 
-    function autoFillCustomerPhone(custName) {
-        if (!custName || custName.trim() === '') return;
-        const matchedInv = savedInvoices.find(i => i.customerName && i.customerName.trim().toLowerCase() === custName.trim().toLowerCase() && i.customerPhone);
-        if (matchedInv && matchedInv.customerPhone) {
-            document.getElementById('customerPhoneInput').value = matchedInv.customerPhone;
-        }
-    }
-
     function updateProductsDatalist() {
         const list = document.getElementById('allProductsDatalist');
         if (list) {
@@ -931,7 +923,18 @@
                         populateUsersDropdown(); 
                         populateLoginUsersSelect(); 
                     }
-                    if (resData.products) products = resData.products;
+
+                    // دمج التصنيفات المحفوظة محلياً لعدم استبدالها بـ "عام"
+                    if (resData.products) {
+                        resData.products.forEach(cloudP => {
+                            let localP = products.find(p => p.n.trim().toLowerCase() === cloudP.n.trim().toLowerCase());
+                            if (localP && localP.category && (!cloudP.category || cloudP.category === 'عام')) {
+                                cloudP.category = localP.category;
+                            }
+                        });
+                        products = resData.products;
+                    }
+
                     if (resData.suppliers) suppliers = resData.suppliers;
 
                     if (resData.invoices) {
@@ -1198,7 +1201,7 @@
 
         if (isProductNameExists(newName, prod.n)) return alert(`⚠️ اسم المنتج (${newName}) مكرر وموجود بالنظام بالفعل!`);
 
-        const newCategory = prompt("التصنيف / القسم:", prod.category || "");
+        const newCategory = prompt("التصنيف / القسم:", prod.category || "عام");
         const newSupplier = prompt("اسم المورد:", prod.supplier || "");
         const newSize = prompt("المقاس:", prod.size || "");
         const newPurpose = prompt("الغرض:", prod.purpose || "");
@@ -1234,7 +1237,7 @@
 
     function addNewProductToSystem() {
         const name = document.getElementById('newProdName').value.trim();
-        const category = document.getElementById('newProdCategory').value.trim();
+        const category = document.getElementById('newProdCategory').value.trim() || 'عام';
         const supplier = document.getElementById('newProdSupplier').value.trim();
         const size = document.getElementById('newProdSize').value.trim();
         const purpose = document.getElementById('newProdPurpose').value.trim();
@@ -1794,7 +1797,7 @@
                     invSell += (i.sellTotal || 0);
                     invProfit += (i.netProfit || 0);
 
-                    // تجميع بيانات التصنيفات
+                    // تجميع مبيعات التصنيفات
                     if (!categoryMap.has(catName)) {
                         categoryMap.set(catName, { qty: 0, sellTotal: 0, netProfit: 0 });
                     }
@@ -1830,7 +1833,7 @@
             }
         });
 
-        // عرض تقرير التصنيفات
+        // طباعة التقرير المجمع للتصنيفات
         if (catTbody) {
             if (categoryMap.size === 0) {
                 catTbody.innerHTML = '<tr><td colspan="4">لا توجد مبيعات مسجلة للتصنيفات في هذه الفترة</td></tr>';

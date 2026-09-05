@@ -1935,7 +1935,7 @@
         });
     }
 
-    // دالة طباعة الباركود المنسقة رأسياً بوضوح لتظهر كل البيانات دون أي تداخل
+    // دالة طباعة الباركود المنسقة رأسياً بوضوح تظهر كل البيانات دون أي تداخل
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");

@@ -1997,7 +1997,7 @@
         });
     }
 
-    // دالة طباعة الباركود لعرض اسم المركز والباركود المطبوع مع أرقامه فقط
+    // دالة طباعة الباركود بعرض 29mm x 15mm مع هوامش أمان 2 مم من كل اتجاه
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -2032,27 +2032,27 @@
                     flex-direction: column;
                     justify-content: center;
                     align-items: center;
-                    padding: 0.8mm;
+                    padding: 2mm;
                     box-sizing: border-box;
                 }
                 .store-name {
-                    font-size: 6.5pt;
+                    font-size: 5.5pt;
                     font-weight: bold;
                     color: #000;
                     line-height: 1;
-                    margin-bottom: 1mm;
+                    margin-bottom: 0.5mm;
                     text-align: center;
                 }
                 .barcode-area {
-                    width: 31mm;
-                    height: 13mm;
+                    width: 29mm;
+                    height: 11mm;
                     display: flex;
                     justify-content: center;
                     align-items: center;
                 }
                 svg {
-                    width: 31mm !important;
-                    height: 13mm !important;
+                    width: 29mm !important;
+                    height: 11mm !important;
                 }
             </style></head>
             <body>
@@ -2067,9 +2067,9 @@
                     window.onload = function() {
                         JsBarcode("#barcode-img", "${prod.barcode}", {
                             format: "CODE128",
-                            width: 1.2,
-                            height: 30,
-                            fontSize: 10,
+                            width: 1.0,
+                            height: 24,
+                            fontSize: 8,
                             textMargin: 1,
                             margin: 0,
                             displayValue: true

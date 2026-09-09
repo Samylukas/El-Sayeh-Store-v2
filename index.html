@@ -13,7 +13,6 @@
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
         html, body { width: 100%; overflow-x: hidden; background-color: #f0f4f8; padding: 4px; color: #1e293b; direction: rtl; }
         
-        /* Splash Screen - أبيض مع نيزك أزرق مضيء ينزل مرة واحدة */
         .splash-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #ffffff;
@@ -116,7 +115,6 @@
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
 
-        /* منطقة الطباعة المباشرة لتطبيقات الأندرويد */
         #appPrintArea { display: none; }
 
         @media print {
@@ -131,7 +129,6 @@
 </head>
 <body>
 
-<!-- Splash Screen -->
 <div id="splashScreen" class="splash-screen">
     <div class="meteor"></div>
     <div class="splash-gear">⚙️</div>
@@ -901,7 +898,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        // إخفاء الـ Splash Screen بعد نزول النيزك مرة واحدة (1.8 ثانية)
         setTimeout(() => {
             const splash = document.getElementById('splashScreen');
             if (splash) {
@@ -2026,7 +2022,38 @@
         });
     }
 
-    // دالة طباعة الباركود المباشرة المضمنة داخلياً دون فتح نوافذ منبثقة خارجيًا
+    // دالة المعاينة والطباعة البديلة الشاملة لمعالجة قيود الموبايل والـ WebView
+    function executeFallbackPrint(htmlContent, title) {
+        let printWin = window.open('', '_blank');
+        if (printWin) {
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${title}</title>
+                    <style>
+                        body { font-family: system-ui, sans-serif; text-align: center; direction: rtl; padding: 10px; }
+                        .no-print-btn { background: #3498db; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 12px; cursor: pointer; }
+                        @media print { .no-print-btn { display: none !important; } }
+                    </style>
+                </head>
+                <body>
+                    <button class="no-print-btn" onclick="window.print()">🖨️ اضغط هنا لتأكيد الطباعة</button>
+                    <div>${htmlContent}</div>
+                    <script>
+                        setTimeout(function() { window.print(); }, 300);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        } else {
+            alert("⚠️ إذا لم تظهر شاشة الطباعة تلقائياً، يرجى السماح بالنوافذ المنبثقة للبرنامج.");
+        }
+    }
+
+    // دالة طباعة الباركود المباشرة مع آلية الطوارئ
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -2056,12 +2083,17 @@
         const printArea = document.getElementById('appPrintArea');
         if (printArea) {
             printArea.innerHTML = labelHTML;
-            window.print();
+            try {
+                window.print();
+            } catch(e) {}
+            
+            // استدعاء دالة الطوارئ لفتح المعاينة إذا تجاهل الأندرويد الأمر
+            executeFallbackPrint(labelHTML, `ملصق باركود - ${prod.n}`);
             setTimeout(() => { printArea.innerHTML = ''; }, 500);
         }
     }
 
-    // دالة طباعة الريسيت المباشرة المضمنة داخلياً دون فتح نوافذ منبثقة خارجيًا
+    // دالة طباعة الريسيت المباشرة مع آلية الطوارئ
     function printSingleReceipt(invId) {
         let inv = savedInvoices.find(i => i.id === invId);
         
@@ -2130,7 +2162,12 @@
         const printArea = document.getElementById('appPrintArea');
         if (printArea) {
             printArea.innerHTML = receiptHTML;
-            window.print();
+            try {
+                window.print();
+            } catch(e) {}
+
+            // استدعاء دالة الطوارئ لفتح المعاينة إذا تجاهل الأندرويد الأمر
+            executeFallbackPrint(receiptHTML, `فاتورة مبيعات #${inv.id}`);
             setTimeout(() => { printArea.innerHTML = ''; }, 500);
         }
     }

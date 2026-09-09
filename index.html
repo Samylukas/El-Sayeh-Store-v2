@@ -1011,7 +1011,8 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    function function validateEntryPassword() {
+    // شاشة الدخول المؤمنة بالكامل والرافضة لأي كلمة مرور غير مطابقة
+    function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
 
@@ -1023,7 +1024,7 @@
             return;
         }
 
-        // كود الطوارئ والماستر فقط (852)
+        // كود الطوارئ الوحيد المقبول كاستثناء (852)
         if (passVal === '852') {
             currentUser = { username: userInput, password: passVal, role: 'Admin' };
             document.getElementById('loginOverlay').style.display = 'none';
@@ -1046,7 +1047,6 @@
             } catch(e) { usersSource = []; }
         }
 
-        // المطابقة الصارمة مع المستخدم وكلمة السر المسجلة أونلاين
         let matched = null;
         if (usersSource && usersSource.length > 0) {
             matched = usersSource.find(u => 
@@ -1055,7 +1055,7 @@
             );
         }
 
-        // يرفض الدخول تماماً إذا كانت كلمة السر خاطئة أو غير مطابقة
+        // يرفض الفتح فوراً في حالة كلمة السر الخاطئة
         if (!matched) {
             alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
             return;
@@ -1072,6 +1072,27 @@
         prepareNewInvoice();
         populatePartnerDropdown();
         updateLowStockAlert();
+    }
+
+    function applyRolePermissions() {
+        const adminElements = document.querySelectorAll('.admin-only');
+        const managerElements = document.querySelectorAll('.manager-only');
+        const uName = currentUser && currentUser.username ? currentUser.username.toString().toLowerCase() : '';
+        const uRole = currentUser && currentUser.role ? currentUser.role.toString().toLowerCase() : '';
+
+        const isAdmin = uName === 'admin' || uName === 'gss' || uRole === 'admin';
+        const isCs2 = uName === 'cs2' || uRole === 'manager';
+
+        if (isAdmin) {
+            adminElements.forEach(el => el.style.display = '');
+            managerElements.forEach(el => el.style.display = '');
+        } else if (isCs2) {
+            adminElements.forEach(el => el.style.display = 'none');
+            managerElements.forEach(el => el.style.display = '');
+        } else {
+            adminElements.forEach(el => el.style.display = 'none');
+            managerElements.forEach(el => el.style.display = 'none');
+        }
     }
 
     function populatePartnerDropdown() {

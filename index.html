@@ -13,14 +13,45 @@
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
         html, body { width: 100%; overflow-x: hidden; background-color: #f0f4f8; padding: 4px; color: #1e293b; direction: rtl; }
         
+        /* Splash Screen Style */
+        .splash-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 99999999; overflow: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .meteor {
+            position: absolute; top: -50px; left: 50%;
+            width: 4px; height: 80px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), #00d2ff);
+            border-radius: 50%;
+            filter: drop-shadow(0 0 6px #00d2ff);
+            animation: meteorFall 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+        }
+
+        @keyframes meteorFall {
+            0% { transform: translate(-50%, 0) rotate(25deg); opacity: 0; }
+            30% { opacity: 1; }
+            70% { transform: translate(-50%, 45vh) rotate(25deg); opacity: 0; }
+            100% { transform: translate(-50%, 45vh) rotate(25deg); opacity: 0; }
+        }
+
+        .splash-gear {
+            font-size: 4rem; color: #00d2ff; margin-bottom: 15px;
+            animation: spinGear 4s linear infinite;
+            filter: drop-shadow(0 0 10px rgba(0,210,255,0.5));
+        }
+
+        .splash-title { color: #fff; font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .splash-sub { color: #a0aec0; font-size: 0.9rem; }
+
         .app-container { width: 100%; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px; border-radius: 12px; box-shadow: 0 4px 15px rgba(30, 60, 114, 0.08); position: relative; min-height: 98vh; padding-bottom: 30px; overflow-x: hidden; border: 1px solid #cbd5e1; }
         h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.1rem; }
         
         .spinning-gear {
-            display: inline-block;
-            font-size: 1.4rem;
-            vertical-align: middle;
-            margin: 0 2px;
+            display: inline-block; font-size: 1.4rem; vertical-align: middle; margin: 0 2px;
             animation: spinGear 6s linear infinite;
         }
 
@@ -99,6 +130,14 @@
     </style>
 </head>
 <body>
+
+<!-- Splash Screen -->
+<div id="splashScreen" class="splash-screen">
+    <div class="meteor"></div>
+    <div class="splash-gear">⚙️</div>
+    <div class="splash-title">El Sayeh Store</div>
+    <div class="splash-sub">مركز السائح لقطع غيار السيارات</div>
+</div>
 
 <div id="loginOverlay" class="login-overlay">
     <div class="login-card">
@@ -811,11 +850,21 @@
         localStorage.removeItem('pendingOfflineInvoices');
     }
 
+    // زر خروج مباشر وحاسم للنظام
     function closeApp() {
-        if (window.Capacitor && window.Capacitor.App) window.Capacitor.App.exitApp();
-        else if (navigator.app && navigator.app.exitApp) navigator.app.exitApp();
-        else if (window.close) window.close();
-        else document.body.innerHTML = '<div style="text-align:center; padding:50px; font-weight:bold; font-size:1.2rem; color:#1e3c72;">تم إغلاق الجلسة بنجاح. يمكنك إغلاق النافذة الآن.</div>';
+        if (window.Capacitor && window.Capacitor.App) {
+            window.Capacitor.App.exitApp();
+        } else if (navigator.app && navigator.app.exitApp) {
+            navigator.app.exitApp();
+        } else {
+            document.body.innerHTML = `
+                <div style="text-align:center; padding:80px 20px; font-weight:bold; font-size:1.2rem; color:#1e3c72; background:#f0f4f8; height:100vh;">
+                    <div style="font-size:3rem; margin-bottom:15px;">⚙️</div>
+                    تم الخروج وإغلاق الجلسة بنجاح.<br>يمكنك إغلاق هذه النافذة الآن.
+                </div>
+            `;
+            try { window.close(); } catch(e) {}
+        }
     }
 
     function formatDateShort(dateInput) {
@@ -875,6 +924,15 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+        // إخفاء الـ Splash Screen بعد أنيميشن النيزك والترس
+        setTimeout(() => {
+            const splash = document.getElementById('splashScreen');
+            if (splash) {
+                splash.style.opacity = '0';
+                splash.style.visibility = 'hidden';
+            }
+        }, 2200);
+
         checkMonthlySubscription();
         fetchCloudData();
 
@@ -1268,7 +1326,7 @@
 
         let prodObj = { 
             n: name, 
-            category: category,
+            category: category, 
             supplier: supplier, 
             size: size, 
             purpose: purpose, 
@@ -1998,6 +2056,7 @@
         });
     }
 
+    // دالة طباعة الباركود مع إتاحة الإغلاق والعودة للتطبيق دون تعليق
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -2077,7 +2136,7 @@
                 
                 <script>
                     window.onload = function() {
-                        setTimeout(function() { window.print(); window.close(); }, 100);
+                        window.print();
                     };
                 <\/script>
             </body></html>
@@ -2085,11 +2144,9 @@
         win.document.close();
     }
 
-    // دالة طباعة الإيصال المباشرة المضمنة داخل الصفحة بدون نوافذ منبثقة
     function printSingleReceipt(invId) {
         let inv = savedInvoices.find(i => i.id === invId);
         
-        // لو الإيصال مأخوذ من الفاتورة الحالية قيد الإنشاء
         if (!inv && invoiceItems.length > 0) {
             let totalSellRaw = 0;
             invoiceItems.forEach(i => totalSellRaw += i.sellTotal);

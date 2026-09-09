@@ -1011,13 +1011,19 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    function validateEntryPassword() {
+    function function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
 
         const userInput = userSelect ? userSelect.value.trim().toLowerCase() : 'admin';
         const passVal = passInput ? passInput.value.toString().trim() : '';
 
+        if (!passVal) {
+            alert('برجاء إدخال كلمة المرور!');
+            return;
+        }
+
+        // كود الطوارئ والماستر فقط (852)
         if (passVal === '852') {
             currentUser = { username: userInput, password: passVal, role: 'Admin' };
             document.getElementById('loginOverlay').style.display = 'none';
@@ -1033,11 +1039,6 @@
             return;
         }
 
-        if (!passVal) {
-            alert('برجاء إدخال كلمة المرور!');
-            return;
-        }
-
         let usersSource = cloudUsers;
         if (!usersSource || usersSource.length === 0) {
             try {
@@ -1045,6 +1046,7 @@
             } catch(e) { usersSource = []; }
         }
 
+        // المطابقة الصارمة مع المستخدم وكلمة السر المسجلة أونلاين
         let matched = null;
         if (usersSource && usersSource.length > 0) {
             matched = usersSource.find(u => 
@@ -1053,11 +1055,10 @@
             );
         }
 
+        // يرفض الدخول تماماً إذا كانت كلمة السر خاطئة أو غير مطابقة
         if (!matched) {
-            let userRole = 'Admin';
-            if (userInput.includes('cs2')) userRole = 'Manager';
-            else if (userInput.includes('cashier')) userRole = 'Cashier';
-            matched = { username: userInput, password: passVal, role: userRole };
+            alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
+            return;
         }
 
         currentUser = matched;
@@ -1071,27 +1072,6 @@
         prepareNewInvoice();
         populatePartnerDropdown();
         updateLowStockAlert();
-    }
-
-    function applyRolePermissions() {
-        const adminElements = document.querySelectorAll('.admin-only');
-        const managerElements = document.querySelectorAll('.manager-only');
-        const uName = currentUser && currentUser.username ? currentUser.username.toString().toLowerCase() : '';
-        const uRole = currentUser && currentUser.role ? currentUser.role.toString().toLowerCase() : '';
-
-        const isAdmin = uName === 'admin' || uName === 'gss' || uRole === 'admin';
-        const isCs2 = uName === 'cs2' || uRole === 'manager';
-
-        if (isAdmin) {
-            adminElements.forEach(el => el.style.display = '');
-            managerElements.forEach(el => el.style.display = '');
-        } else if (isCs2) {
-            adminElements.forEach(el => el.style.display = 'none');
-            managerElements.forEach(el => el.style.display = '');
-        } else {
-            adminElements.forEach(el => el.style.display = 'none');
-            managerElements.forEach(el => el.style.display = 'none');
-        }
     }
 
     function populatePartnerDropdown() {

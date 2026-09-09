@@ -13,38 +13,38 @@
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
         html, body { width: 100%; overflow-x: hidden; background-color: #f0f4f8; padding: 4px; color: #1e293b; direction: rtl; }
         
+        /* Splash Screen - أبيض مع نيزك أزرق مضيء ينزل مرة واحدة */
         .splash-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            background: #ffffff;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 99999999; overflow: hidden;
             transition: opacity 0.8s ease, visibility 0.8s ease;
         }
 
         .meteor {
-            position: absolute; top: -50px; left: 50%;
-            width: 4px; height: 80px;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), #00d2ff);
+            position: absolute; top: -60px; left: 50%;
+            width: 5px; height: 90px;
+            background: linear-gradient(to bottom, rgba(0,162,255,0), #0055ff, #00d2ff);
             border-radius: 50%;
-            filter: drop-shadow(0 0 6px #00d2ff);
-            animation: meteorFall 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+            filter: drop-shadow(0 0 8px #00d2ff);
+            animation: meteorFallOnce 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        @keyframes meteorFall {
+        @keyframes meteorFallOnce {
             0% { transform: translate(-50%, 0) rotate(25deg); opacity: 0; }
-            30% { opacity: 1; }
-            70% { transform: translate(-50%, 45vh) rotate(25deg); opacity: 0; }
+            40% { opacity: 1; }
             100% { transform: translate(-50%, 45vh) rotate(25deg); opacity: 0; }
         }
 
         .splash-gear {
-            font-size: 4rem; color: #00d2ff; margin-bottom: 15px;
+            font-size: 4.5rem; color: #1e3c72; margin-bottom: 15px;
             animation: spinGear 4s linear infinite;
-            filter: drop-shadow(0 0 10px rgba(0,210,255,0.5));
+            filter: drop-shadow(0 0 12px rgba(0,162,255,0.4));
         }
 
-        .splash-title { color: #fff; font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .splash-sub { color: #a0aec0; font-size: 0.9rem; }
+        .splash-title { color: #1e3c72; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px; }
+        .splash-sub { color: #64748b; font-size: 0.95rem; font-weight: bold; }
 
         .app-container { width: 100%; max-width: 100%; margin: 0 auto; background: #fff; padding: 8px; border-radius: 12px; box-shadow: 0 4px 15px rgba(30, 60, 114, 0.08); position: relative; min-height: 98vh; padding-bottom: 30px; overflow-x: hidden; border: 1px solid #cbd5e1; }
         h1 { text-align: center; color: #1e3c72; margin-bottom: 8px; font-size: 1.1rem; }
@@ -116,7 +116,7 @@
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
 
-        /* منطقة الطباعة المباشرة داخل الصفحة */
+        /* منطقة الطباعة المباشرة لتطبيقات الأندرويد */
         #appPrintArea { display: none; }
 
         @media print {
@@ -156,10 +156,7 @@
             <input type="password" id="entryPassInput" class="search-box" style="text-align:center; margin-top:4px;" placeholder="كلمة المرور..." onkeypress="if(event.key === 'Enter') validateEntryPassword()">
         </div>
 
-        <div style="display:flex; gap:6px;">
-            <button type="button" class="btn btn-blue" style="margin-top:0;" onclick="validateEntryPassword()">تسجيل الدخول</button>
-            <button type="button" class="btn btn-red" style="margin-top:0;" onclick="closeApp()">خروج من البرنامج</button>
-        </div>
+        <button type="button" class="btn btn-blue" style="margin-top:0;" onclick="validateEntryPassword()">تسجيل الدخول</button>
 
         <div class="footer-signature" style="margin-top:12px;">El Sayeh Store</div>
     </div>
@@ -539,7 +536,6 @@
     <div class="footer-signature">El Sayeh Store <span class="spinning-gear" style="font-size: 0.9rem;">⚙️</span></div>
 </div>
 
-<!-- حاوية الطباعة المباشرة داخل الصفحة لحل مشكلة المتصفح الخارجي للنظام والتطبيقات -->
 <div id="appPrintArea"></div>
 
 <div id="hiddenBarcodeTemp" style="display:none; position:absolute; left:-9999px;">
@@ -848,23 +844,6 @@
         localStorage.removeItem('pendingOfflineInvoices');
     }
 
-    function closeApp() {
-        currentUser = null;
-        if (window.Capacitor && window.Capacitor.App && window.Capacitor.App.exitApp) {
-            window.Capacitor.App.exitApp();
-        } else if (navigator.app && navigator.app.exitApp) {
-            navigator.app.exitApp();
-        } else {
-            document.body.innerHTML = `
-                <div style="text-align:center; padding:80px 20px; font-weight:bold; font-size:1.2rem; color:#1e3c72; background:#f0f4f8; height:100vh;">
-                    <div style="font-size:3rem; margin-bottom:15px;">⚙️</div>
-                    تم الخروج وإغلاق الجلسة بنجاح.<br>يمكنك إغلاق الأبلكيشن الآن.
-                </div>
-            `;
-            try { window.close(); } catch(e) {}
-        }
-    }
-
     function formatDateShort(dateInput) {
         if (!dateInput) return "-";
         let d = new Date(dateInput);
@@ -922,13 +901,14 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+        // إخفاء الـ Splash Screen بعد نزول النيزك مرة واحدة (1.8 ثانية)
         setTimeout(() => {
             const splash = document.getElementById('splashScreen');
             if (splash) {
                 splash.style.opacity = '0';
                 splash.style.visibility = 'hidden';
             }
-        }, 2200);
+        }, 1800);
 
         checkMonthlySubscription();
         fetchCloudData();

@@ -123,7 +123,7 @@
             <button type="button" class="btn btn-red" style="margin-top:0;" onclick="closeApp()">خروج من البرنامج</button>
         </div>
 
-        <div class="footer-signature" style="margin-top:12px;">El Sayeh Store 2026 | D&P Samy Luks</div>
+        <div class="footer-signature" style="margin-top:12px;">El Sayeh Store</div>
     </div>
 </div>
 
@@ -454,7 +454,7 @@
                 </thead>
                 <tbody id="savedInvoicesBody"></tbody>
             </table></div>
-            <div class="footer-signature" style="margin-top:8px;">El Sayeh Store 2026 | D&P Samy Luks</div>
+            <div class="footer-signature" style="margin-top:8px;">El Sayeh Store</div>
         </div>
     </div>
 
@@ -498,12 +498,11 @@
         </div>
     </div>
 
-    <div class="footer-signature">El Sayeh Store 2026 | D&P Samy Luks <span class="spinning-gear" style="font-size: 0.9rem;">⚙️</span></div>
+    <div class="footer-signature">El Sayeh Store <span class="spinning-gear" style="font-size: 0.9rem;">⚙️</span></div>
 </div>
 
 <div id="receiptPrintSection"></div>
 
-<!-- عنصر مؤقت خفي لتوليد السورس الخاص بالباركود بأمان دون الاعتماد على تحميل CDN أونلاين في النافذة الجديدة -->
 <div id="hiddenBarcodeTemp" style="display:none; position:absolute; left:-9999px;">
     <svg id="tempBarcodeSvg"></svg>
 </div>
@@ -929,7 +928,6 @@
                         populateLoginUsersSelect(); 
                     }
 
-                    // دمج التصنيفات المحفوظة محلياً لعدم استبدالها بـ "عام"
                     if (resData.products) {
                         resData.products.forEach(cloudP => {
                             let localP = products.find(p => p.n.trim().toLowerCase() === cloudP.n.trim().toLowerCase());
@@ -1189,7 +1187,7 @@
 
         if (!prod.barcode || prod.barcode.trim() === "") {
             let newBarcode = "";
-            do { newBarcode = "2026" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(newBarcode, prod.n));
+            do { newBarcode = "200" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(newBarcode, prod.n));
             prod.barcode = newBarcode;
             syncToCloud("updateSingleProduct", prod);
             alert(`✅ تم إصدار باركود جديد للمنتج [${prod.n}]: (${prod.barcode})!`);
@@ -1257,7 +1255,7 @@
         if (!name) return alert('أدخل اسم الصنف أولاً!');
 
         if (!barcode) {
-            do { barcode = "2026" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(barcode));
+            do { barcode = "200" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(barcode));
         }
 
         let existingIdx = products.findIndex(p => p.n.trim().toLowerCase() === name.toLowerCase());
@@ -1802,7 +1800,6 @@
                     invSell += (i.sellTotal || 0);
                     invProfit += (i.netProfit || 0);
 
-                    // تجميع مبيعات التصنيفات
                     if (!categoryMap.has(catName)) {
                         categoryMap.set(catName, { qty: 0, sellTotal: 0, netProfit: 0 });
                     }
@@ -1838,7 +1835,6 @@
             }
         });
 
-        // طباعة التقرير المجمع للتصنيفات
         if (catTbody) {
             if (categoryMap.size === 0) {
                 catTbody.innerHTML = '<tr><td colspan="4">لا توجد مبيعات مسجلة للتصنيفات في هذه الفترة</td></tr>';
@@ -1991,7 +1987,7 @@
 
         const opt = {
             margin:       [10, 8, 10, 8],
-            filename:     `El_Sayeh_Store_Report_${new Date().toISOString().slice(0,10)}.pdf`,
+            filename:     `El_Sayeh_Store_Report.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -2002,12 +1998,10 @@
         });
     }
 
-    // دالة طباعة الباركود بعرض 29mm x 15mm وتوليد الـ SVG محلياً مسبقاً لمنع أي اختفاء
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
 
-        // توليد الباركود محلياً بداخل العنصر الخفي أولاً لاستخراج كود SVG صريح وتأمين الطباعة
         const tempSvg = document.getElementById("tempBarcodeSvg");
         JsBarcode(tempSvg, prod.barcode, {
             format: "CODE128",
@@ -2135,7 +2129,7 @@
                 <h3 style="text-align:center; font-size:14px; margin:4px 0;">الإجمالي النهائي: ${inv.totalEGP.toFixed(2)} ج.م</h3>
             </div>
             <p style="font-size:10px; margin-top:8px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p>
-            <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store 2026 | D&P Samy Luks</div>
+            <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store</div>
         `;
 
         const printSec = document.getElementById('receiptPrintSection');

@@ -86,10 +86,12 @@
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
 
+        #receiptPrintSection { display: none; }
+
         @media print {
-            body.printing-receipt * { visibility: hidden; }
-            #receiptPrintSection, #receiptPrintSection * { visibility: visible; }
-            #receiptPrintSection { position: absolute; left: 0; top: 0; width: 80mm; font-family: 'Courier New', monospace; font-size: 12px; text-align: center; direction: rtl; color: #000; }
+            body * { visibility: hidden !important; }
+            #receiptPrintSection, #receiptPrintSection * { visibility: visible !important; }
+            #receiptPrintSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: system-ui, sans-serif; font-size: 12px; text-align: center; direction: rtl; color: #000; }
         }
 
         .pdf-export-mode table { min-width: 100% !important; font-size: 10px !important; }
@@ -1011,7 +1013,6 @@
         cloudUsers.forEach(u => select.innerHTML += `<option value="${u.username}">${u.username}</option>`);
     }
 
-    // شاشة الدخول المؤمنة بالكامل والرافضة لأي كلمة مرور غير مطابقة
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect');
         const passInput = document.getElementById('entryPassInput');
@@ -1024,7 +1025,6 @@
             return;
         }
 
-        // كود الطوارئ الوحيد المقبول كاستثناء (852)
         if (passVal === '852') {
             currentUser = { username: userInput, password: passVal, role: 'Admin' };
             document.getElementById('loginOverlay').style.display = 'none';
@@ -1055,7 +1055,6 @@
             );
         }
 
-        // يرفض الفتح فوراً في حالة كلمة السر الخاطئة
         if (!matched) {
             alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
             return;
@@ -2086,29 +2085,48 @@
         win.document.close();
     }
 
+    // دالة طباعة الإيصال المباشرة المضمنة داخل الصفحة بدون نوافذ منبثقة
     function printSingleReceipt(invId) {
-        const inv = savedInvoices.find(i => i.id === invId);
-        if (!inv) return;
+        let inv = savedInvoices.find(i => i.id === invId);
+        
+        // لو الإيصال مأخوذ من الفاتورة الحالية قيد الإنشاء
+        if (!inv && invoiceItems.length > 0) {
+            let totalSellRaw = 0;
+            invoiceItems.forEach(i => totalSellRaw += i.sellTotal);
+            let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0;
+            let discValue = (totalSellRaw * discPercent) / 100;
+            inv = {
+                id: activeInvoiceId,
+                date: formatDateShort(document.getElementById('invoiceDate').value || new Date()),
+                paymentType: document.getElementById('paymentTypeSelect').value,
+                customerName: document.getElementById('customerNameInput').value.trim(),
+                items: JSON.parse(JSON.stringify(invoiceItems)),
+                totalEGP: totalSellRaw - discValue
+            };
+        }
+
+        if (!inv) return alert("⚠️ الفاتورة فارغة أو غير موجودة!");
 
         let formattedDate = formatDateShort(inv.date);
 
         let receiptHTML = `
-            <div style="font-size:16px; font-weight:bold; margin-bottom:2px;"><span class="spinning-gear" style="font-size: 14px;">⚙️</span> El Sayeh Store</div>
-            <div style="font-size:12px; margin-bottom:6px;">مركز السائح لقطع غيار السيارات</div>
-            <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:4px 0; margin-bottom:6px;">
-                <p style="font-size:11px; margin:2px 0;">رقم الفاتورة: <b>#${inv.id}</b></p>
-                <p style="font-size:11px; margin:2px 0;">نوع الدفع: ${inv.paymentType === 'credit' ? 'آجل ('+inv.customerName+')' : 'نقدي'}</p>
-                <p style="font-size:11px; margin:2px 0;">التاريخ: ${formattedDate}</p>
-            </div>
-            <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:right;">
-                <thead>
-                    <tr style="border-bottom:1px solid #000;">
-                        <th style="text-align:right; padding-bottom:4px;">الصنف</th>
-                        <th style="text-align:center; padding-bottom:4px;">العدد</th>
-                        <th style="text-align:left; padding-bottom:4px;">الإجمالي</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div style="padding:10px; text-align:center; width:80mm; margin:0 auto; direction:rtl; font-family:system-ui, sans-serif;">
+                <div style="font-size:16px; font-weight:bold; margin-bottom:2px;"><span class="spinning-gear" style="font-size: 14px;">⚙️</span> El Sayeh Store</div>
+                <div style="font-size:12px; margin-bottom:6px;">مركز السائح لقطع غيار السيارات</div>
+                <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:4px 0; margin-bottom:6px;">
+                    <p style="font-size:11px; margin:2px 0; text-align:right;">رقم الفاتورة: <b>#${inv.id}</b></p>
+                    <p style="font-size:11px; margin:2px 0; text-align:right;">نوع الدفع: ${inv.paymentType === 'credit' ? 'آجل ('+(inv.customerName || 'عميل')+')' : 'نقدي'}</p>
+                    <p style="font-size:11px; margin:2px 0; text-align:right;">التاريخ: ${formattedDate}</p>
+                </div>
+                <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:right; margin-bottom:6px;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #000;">
+                            <th style="text-align:right; padding-bottom:4px;">الصنف</th>
+                            <th style="text-align:center; padding-bottom:4px;">العدد</th>
+                            <th style="text-align:left; padding-bottom:4px;">الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
 
         if (inv.items && inv.items.length > 0) {
@@ -2117,27 +2135,33 @@
                     <tr>
                         <td style="text-align:right; padding:3px 0;">${i.name} [${i.category || 'عام'}]</td>
                         <td style="text-align:center; padding:3px 0;">${i.qty}</td>
-                        <td style="text-align:left; padding:3px 0;">${i.sellTotal.toFixed(2)}</td>
+                        <td style="text-align:left; padding:3px 0;">${(i.sellTotal || 0).toFixed(2)}</td>
                     </tr>
                 `;
             });
         }
 
         receiptHTML += `
-                </tbody>
-            </table>
-            <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px;">
-                <h3 style="text-align:center; font-size:14px; margin:4px 0;">الإجمالي النهائي: ${inv.totalEGP.toFixed(2)} ج.م</h3>
+                    </tbody>
+                </table>
+                <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px;">
+                    <h3 style="text-align:center; font-size:14px; margin:4px 0;">الإجمالي النهائي: ${(inv.totalEGP || 0).toFixed(2)} ج.م</h3>
+                </div>
+                <p style="font-size:10px; margin-top:8px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p>
+                <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store</div>
             </div>
-            <p style="font-size:10px; margin-top:8px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p>
-            <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store</div>
         `;
 
         const printSec = document.getElementById('receiptPrintSection');
-        printSec.innerHTML = receiptHTML;
-        document.body.classList.add('printing-receipt');
-        window.print();
-        setTimeout(() => { document.body.classList.remove('printing-receipt'); printSec.innerHTML = ''; }, 500);
+        if (printSec) {
+            printSec.innerHTML = receiptHTML;
+            document.body.classList.add('printing-receipt');
+            window.print();
+            setTimeout(() => { 
+                document.body.classList.remove('printing-receipt'); 
+                printSec.innerHTML = ''; 
+            }, 500);
+        }
     }
 
     function changeUserPasswordSystem() {

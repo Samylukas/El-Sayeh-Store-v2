@@ -116,12 +116,13 @@
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
 
-        #receiptPrintSection { display: none; }
+        /* منطقة الطباعة المباشرة داخل الصفحة */
+        #appPrintArea { display: none; }
 
         @media print {
             body * { visibility: hidden !important; }
-            #receiptPrintSection, #receiptPrintSection * { visibility: visible !important; }
-            #receiptPrintSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; font-family: system-ui, sans-serif; font-size: 12px; text-align: center; direction: rtl; color: #000; }
+            #appPrintArea, #appPrintArea * { visibility: visible !important; }
+            #appPrintArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; direction: rtl; }
         }
 
         .pdf-export-mode table { min-width: 100% !important; font-size: 10px !important; }
@@ -130,6 +131,7 @@
 </head>
 <body>
 
+<!-- Splash Screen -->
 <div id="splashScreen" class="splash-screen">
     <div class="meteor"></div>
     <div class="splash-gear">⚙️</div>
@@ -537,7 +539,8 @@
     <div class="footer-signature">El Sayeh Store <span class="spinning-gear" style="font-size: 0.9rem;">⚙️</span></div>
 </div>
 
-<div id="receiptPrintSection"></div>
+<!-- حاوية الطباعة المباشرة داخل الصفحة لحل مشكلة المتصفح الخارجي للنظام والتطبيقات -->
+<div id="appPrintArea"></div>
 
 <div id="hiddenBarcodeTemp" style="display:none; position:absolute; left:-9999px;">
     <svg id="tempBarcodeSvg"></svg>
@@ -846,7 +849,8 @@
     }
 
     function closeApp() {
-        if (window.Capacitor && window.Capacitor.App) {
+        currentUser = null;
+        if (window.Capacitor && window.Capacitor.App && window.Capacitor.App.exitApp) {
             window.Capacitor.App.exitApp();
         } else if (navigator.app && navigator.app.exitApp) {
             navigator.app.exitApp();
@@ -854,7 +858,7 @@
             document.body.innerHTML = `
                 <div style="text-align:center; padding:80px 20px; font-weight:bold; font-size:1.2rem; color:#1e3c72; background:#f0f4f8; height:100vh;">
                     <div style="font-size:3rem; margin-bottom:15px;">⚙️</div>
-                    تم الخروج وإغلاق الجلسة بنجاح.<br>يمكنك إغلاق هذه النافذة الآن.
+                    تم الخروج وإغلاق الجلسة بنجاح.<br>يمكنك إغلاق الأبلكيشن الآن.
                 </div>
             `;
             try { window.close(); } catch(e) {}
@@ -1024,7 +1028,6 @@
         });
     }
 
-    // بناء قائمة المكتوبة أونلاين فقط دون إضافة يوزرات افتراضية قديمة
     function populateLoginUsersSelect() {
         const select = document.getElementById('entryUserSelect');
         if (!select) return;
@@ -2043,6 +2046,7 @@
         });
     }
 
+    // دالة طباعة الباركود المباشرة المضمنة داخلياً دون فتح نوافذ منبثقة خارجيًا
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
@@ -2060,76 +2064,24 @@
 
         const svgContent = tempSvg.outerHTML;
 
-        const win = window.open('', '_blank', 'width=350,height=250');
-        if (!win) return alert("⚠️ يرجى السماح بالنوافذ المنبثقة (Pop-ups) للطباعة!");
-
-        win.document.write(`
-            <!DOCTYPE html>
-            <html><head><title>Print Label</title>
-            <style>
-                @page {
-                    size: 33mm 19mm landscape;
-                    margin: 0;
-                }
-                * { box-sizing: border-box; margin: 0; padding: 0; }
-                html, body {
-                    width: 33mm;
-                    height: 19mm;
-                    margin: 0;
-                    padding: 0;
-                    background: #fff;
-                    font-family: Arial, Helvetica, sans-serif;
-                    overflow: hidden;
-                    direction: rtl;
-                }
-                .label-card {
-                    width: 33mm;
-                    height: 19mm;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    padding: 2mm;
-                    box-sizing: border-box;
-                }
-                .store-name {
-                    font-size: 5.5pt;
-                    font-weight: bold;
-                    color: #000;
-                    line-height: 1;
-                    margin-bottom: 0.5mm;
-                    text-align: center;
-                }
-                .barcode-area {
-                    width: 29mm;
-                    height: 11mm;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-                svg {
-                    width: 29mm !important;
-                    height: 11mm !important;
-                }
-            </style></head>
-            <body>
-                <div class="label-card">
-                    <div class="store-name">El Sayeh Store ⚙️</div>
-                    <div class="barcode-area">
-                        ${svgContent}
-                    </div>
+        let labelHTML = `
+            <div style="width:33mm; height:19mm; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:2mm; margin:0 auto; font-family:Arial, sans-serif; direction:rtl;">
+                <div style="font-size:5.5pt; font-weight:bold; color:#000; line-height:1; margin-bottom:0.5mm; text-align:center;">El Sayeh Store ⚙️</div>
+                <div style="width:29mm; height:11mm; display:flex; justify-content:center; align-items:center;">
+                    ${svgContent}
                 </div>
-                
-                <script>
-                    window.onload = function() {
-                        window.print();
-                    };
-                <\/script>
-            </body></html>
-        `);
-        win.document.close();
+            </div>
+        `;
+
+        const printArea = document.getElementById('appPrintArea');
+        if (printArea) {
+            printArea.innerHTML = labelHTML;
+            window.print();
+            setTimeout(() => { printArea.innerHTML = ''; }, 500);
+        }
     }
 
+    // دالة طباعة الريسيت المباشرة المضمنة داخلياً دون فتح نوافذ منبثقة خارجيًا
     function printSingleReceipt(invId) {
         let inv = savedInvoices.find(i => i.id === invId);
         
@@ -2153,7 +2105,7 @@
         let formattedDate = formatDateShort(inv.date);
 
         let receiptHTML = `
-            <div style="padding:10px; text-align:center; width:80mm; margin:0 auto; direction:rtl; font-family:system-ui, sans-serif;">
+            <div style="padding:10px; text-align:center; width:80mm; margin:0 auto; direction:rtl; font-family:system-ui, sans-serif; color:#000;">
                 <div style="font-size:16px; font-weight:bold; margin-bottom:2px;"><span class="spinning-gear" style="font-size: 14px;">⚙️</span> El Sayeh Store</div>
                 <div style="font-size:12px; margin-bottom:6px;">مركز السائح لقطع غيار السيارات</div>
                 <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:4px 0; margin-bottom:6px;">
@@ -2195,15 +2147,11 @@
             </div>
         `;
 
-        const printSec = document.getElementById('receiptPrintSection');
-        if (printSec) {
-            printSec.innerHTML = receiptHTML;
-            document.body.classList.add('printing-receipt');
+        const printArea = document.getElementById('appPrintArea');
+        if (printArea) {
+            printArea.innerHTML = receiptHTML;
             window.print();
-            setTimeout(() => { 
-                document.body.classList.remove('printing-receipt'); 
-                printSec.innerHTML = ''; 
-            }, 500);
+            setTimeout(() => { printArea.innerHTML = ''; }, 500);
         }
     }
 

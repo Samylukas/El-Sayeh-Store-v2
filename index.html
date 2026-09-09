@@ -115,12 +115,14 @@
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
 
+        /* منطقة الطباعة المباشرة لتطبيقات الأندرويد */
         #appPrintArea { display: none; }
 
         @media print {
             body * { visibility: hidden !important; }
             #appPrintArea, #appPrintArea * { visibility: visible !important; }
             #appPrintArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; direction: rtl; }
+            .login-overlay { display: none !important; }
         }
 
         .pdf-export-mode table { min-width: 100% !important; font-size: 10px !important; }
@@ -129,6 +131,7 @@
 </head>
 <body>
 
+<!-- Splash Screen -->
 <div id="splashScreen" class="splash-screen">
     <div class="meteor"></div>
     <div class="splash-gear">⚙️</div>
@@ -156,6 +159,23 @@
         <button type="button" class="btn btn-blue" style="margin-top:0;" onclick="validateEntryPassword()">تسجيل الدخول</button>
 
         <div class="footer-signature" style="margin-top:12px;">El Sayeh Store</div>
+    </div>
+</div>
+
+<!-- شاشة خيارات الطباعة الموحدة (الحل الجذري للموبايل) -->
+<div id="printOptionsModal" class="login-overlay" style="display:none; z-index:9999999;">
+    <div class="login-card" style="max-width:320px; text-align:center;">
+        <h3 style="color:#1e3c72; margin-bottom:10px; font-size:1.1rem;">🖨️ خيارات الطباعة</h3>
+        
+        <!-- معاينة الفاتورة أو الملصق -->
+        <div id="printPreviewBox" style="background:#f8fafc; border:1px solid #cbd5e1; padding:10px; margin-bottom:15px; max-height:220px; overflow-y:auto; font-size:0.8rem; text-align:right;">
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn btn-blue" onclick="executeNativePrint()">🖨️ طباعة مباشرة (للطابعات المعرفة)</button>
+            <button class="btn btn-purple" onclick="executeSharePrint()">📤 مشاركة للطابعة (بلوتوث/واتساب)</button>
+            <button class="btn btn-red" onclick="closePrintModal()">❌ إغلاق المعاينة</button>
+        </div>
     </div>
 </div>
 
@@ -551,6 +571,9 @@
     let selectedStockEditProduct = null;
     let editingFinanceId = null;
 
+    let currentPrintHtml = '';
+    let currentPrintTextPayload = '';
+
     function playBeepSound() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -597,19 +620,129 @@
     function applyPhoneMask(input) {
         let val = input.value.replace(/\D/g, '');
         if (val.length > 11) val = val.slice(0, 11);
-        
         let formatted = '';
         if (val.length > 0) formatted += val.substring(0, 4);
         if (val.length > 4) formatted += '/' + val.substring(4, 7);
         if (val.length > 7) formatted += '/' + val.substring(7, 11);
-        
         input.value = formatted;
+    }
+
+    // Modal Control Functions للموبايل
+    function openPrintModal(htmlContent, textPayload) {
+        currentPrintHtml = htmlContent;
+        currentPrintTextPayload = textPayload;
+        
+        document.getElementById('printPreviewBox').innerHTML = htmlContent;
+        document.getElementById('appPrintArea').innerHTML = htmlContent; // تجهيز الداتا للـ print
+        document.getElementById('printOptionsModal').style.display = 'flex';
+    }
+
+    function closePrintModal() {
+        document.getElementById('printOptionsModal').style.display = 'none';
+        document.getElementById('appPrintArea').innerHTML = '';
+        currentPrintHtml = '';
+        currentPrintTextPayload = '';
+    }
+
+    function executeNativePrint() {
+        window.print();
+    }
+
+    function executeSharePrint() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'مستند من مركز السائح',
+                text: currentPrintTextPayload
+            }).catch(err => console.log('تم إلغاء المشاركة'));
+        } else {
+            alert("جهازك لا يدعم المشاركة المباشرة.\n\nبيانات الطباعة:\n" + currentPrintTextPayload);
+        }
+    }
+
+    // دوال الطباعة المحدثة لاستخدام نافذة الموبايل المخصصة
+    function printBarcodeLabel(prodName) {
+        const prod = products.find(p => p.n === prodName);
+        if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
+
+        const tempSvg = document.getElementById("tempBarcodeSvg");
+        JsBarcode(tempSvg, prod.barcode, {
+            format: "CODE128", width: 1.0, height: 24, fontSize: 8, margin: 0, displayValue: true
+        });
+
+        let html = `
+            <div style="width:33mm; height:19mm; display:flex; flex-direction:column; justify-content:center; align-items:center; margin:0 auto; font-family:Arial, sans-serif; direction:rtl;">
+                <div style="font-size:6pt; font-weight:bold; color:#000; margin-bottom:1mm;">El Sayeh Store ⚙️</div>
+                <div>${tempSvg.outerHTML}</div>
+            </div>
+        `;
+
+        let textPayload = `El Sayeh Store ⚙️\nالصنف: ${prod.n}\nالسعر: ${prod.sp} ج.م\nالباركود: ${prod.barcode}`;
+
+        openPrintModal(html, textPayload);
+    }
+
+    function printSingleReceipt(invId) {
+        let inv = savedInvoices.find(i => i.id === invId);
+        if (!inv && invoiceItems.length > 0) {
+            let totalSellRaw = 0;
+            invoiceItems.forEach(i => totalSellRaw += i.sellTotal);
+            let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0;
+            let discValue = (totalSellRaw * discPercent) / 100;
+            inv = {
+                id: activeInvoiceId,
+                date: formatDateShort(document.getElementById('invoiceDate').value || new Date()),
+                paymentType: document.getElementById('paymentTypeSelect').value,
+                customerName: document.getElementById('customerNameInput').value.trim(),
+                items: JSON.parse(JSON.stringify(invoiceItems)),
+                totalEGP: totalSellRaw - discValue
+            };
+        }
+
+        if (!inv) return alert("⚠️ الفاتورة فارغة أو غير موجودة!");
+
+        let formattedDate = formatDateShort(inv.date);
+
+        // بناء الـ HTML الخاص بالمعاينة والطباعة
+        let html = `
+            <div style="padding:5px; text-align:center; width:100%; max-width:80mm; margin:0 auto; direction:rtl; font-family:system-ui, sans-serif; color:#000;">
+                <div style="font-size:14px; font-weight:bold;">⚙️ El Sayeh Store</div>
+                <div style="font-size:11px; margin-bottom:4px;">مركز السائح لقطع غيار السيارات</div>
+                <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:4px 0; margin-bottom:4px;">
+                    <div style="font-size:11px; text-align:right;">رقم الفاتورة: <b>#${inv.id}</b></div>
+                    <div style="font-size:11px; text-align:right;">الدفع: ${inv.paymentType === 'credit' ? 'آجل ('+(inv.customerName||'عميل')+')' : 'نقدي'}</div>
+                    <div style="font-size:11px; text-align:right;">التاريخ: ${formattedDate}</div>
+                </div>
+                <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:right; margin-bottom:4px;">
+                    <thead><tr style="border-bottom:1px solid #000;">
+                        <th style="text-align:right;">الصنف</th><th style="text-align:center;">العدد</th><th style="text-align:left;">الإجمالي</th>
+                    </tr></thead><tbody>
+        `;
+        
+        let textPayload = `⚙️ El Sayeh Store\nمركز السائح لقطع غيار السيارات\n------------------\n`;
+        textPayload += `فاتورة رقم: #${inv.id}\nالنوع: ${inv.paymentType === 'credit' ? 'آجل' : 'نقدي'}\nالتاريخ: ${formattedDate}\n------------------\n`;
+
+        if (inv.items && inv.items.length > 0) {
+            inv.items.forEach(i => {
+                html += `<tr><td style="text-align:right;">${i.name}</td><td style="text-align:center;">${i.qty}</td><td style="text-align:left;">${(i.sellTotal||0).toFixed(2)}</td></tr>`;
+                textPayload += `${i.name}\n ${i.qty} قطعة = ${(i.sellTotal||0).toFixed(2)} ج.م\n`;
+            });
+        }
+
+        html += `</tbody></table>
+            <div style="border-top:1px dashed #000; margin-top:4px; padding-top:4px;">
+                <h3 style="text-align:center; font-size:13px; margin:2px 0;">الإجمالي النهائي: ${(inv.totalEGP || 0).toFixed(2)} ج.م</h3>
+            </div>
+            <p style="font-size:9px; margin-top:6px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p>
+        </div>`;
+
+        textPayload += `------------------\nالإجمالي النهائي: ${(inv.totalEGP || 0).toFixed(2)} ج.م\nشكراً لزيارتكم!`;
+
+        openPrintModal(html, textPayload);
     }
 
     function editCreditCustomerDetails(oldName, oldPhone) {
         const newName = prompt("تعديل اسم العميل:", oldName);
         if (!newName || newName.trim() === '') return;
-
         const newPhone = prompt("تعديل رقم هاتف الواتساب:", oldPhone || '');
 
         let updated = false;
@@ -655,9 +788,7 @@
 
     function updateProductsDatalist() {
         const list = document.getElementById('allProductsDatalist');
-        if (list) {
-            list.innerHTML = products.map(p => `<option value="${p.n}">`).join('');
-        }
+        if (list) list.innerHTML = products.map(p => `<option value="${p.n}">`).join('');
         
         const catList = document.getElementById('categoriesDatalist');
         if (catList) {
@@ -672,17 +803,13 @@
         if (!phone || phone.trim() === '' || phone === '-') {
             phone = prompt(`أدخل رقم هاتف الواتساب للعميل (${custName}):`);
         }
-        
         if (!phone) return;
         phone = phone.replace(/[^0-9]/g, '');
-        if (!phone.startsWith('20') && phone.length === 11) {
-            phone = '2' + phone;
-        }
+        if (!phone.startsWith('20') && phone.length === 11) phone = '2' + phone;
 
         const rawMsg = "مساء الخير يا فندم 🌸\nنود تذكير سيادتكم بموعد سداد الحساب الآجل المستحق لـ مركز السائح لقطع غيار السيارات.\nشاكرين لسيادتكم حسن التعامل والالتزام المعهود، ونتشرف بزيارتكم دائماً! ⚙️";
         const message = encodeURIComponent(rawMsg);
-        const url = `https://wa.me/${phone}?text=${message}`;
-        window.open(url, '_blank');
+        window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
     }
 
     function clearReportDates() {
@@ -706,9 +833,7 @@
         document.getElementById('supplierModal').style.display = 'flex';
     }
 
-    function closeSupplierModal() {
-        document.getElementById('supplierModal').style.display = 'none';
-    }
+    function closeSupplierModal() { document.getElementById('supplierModal').style.display = 'none'; }
 
     function saveSupplierFromModal() {
         const name = document.getElementById('suppModalName').value.trim();
@@ -734,22 +859,16 @@
     function openPayCreditModal() {
         const select = document.getElementById('payCreditCustomerSelect');
         select.innerHTML = '';
-
         let creditCustomersMap = new Map();
         savedInvoices.forEach(inv => {
             if (inv.paymentType === 'credit' && inv.customerName) {
                 let paid = inv.paidAmount || 0;
                 let due = inv.totalEGP - paid;
-                if (due > 0) {
-                    let currentDue = creditCustomersMap.get(inv.customerName) || 0;
-                    creditCustomersMap.set(inv.customerName, currentDue + due);
-                }
+                if (due > 0) creditCustomersMap.set(inv.customerName, (creditCustomersMap.get(inv.customerName) || 0) + due);
             }
         });
 
-        if (creditCustomersMap.size === 0) {
-            return alert('⚠️ لا يوجد عملاء عليهم مديونيات آجلة مسجلة بالنظام حالياً!');
-        }
+        if (creditCustomersMap.size === 0) return alert('⚠️ لا يوجد عملاء عليهم مديونيات آجلة مسجلة بالنظام حالياً!');
 
         creditCustomersMap.forEach((dueVal, custName) => {
             select.innerHTML += `<option value="${custName}" data-due="${dueVal}">${custName}</option>`;
@@ -760,9 +879,7 @@
         document.getElementById('payCreditModal').style.display = 'flex';
     }
 
-    function closePayCreditModal() {
-        document.getElementById('payCreditModal').style.display = 'none';
-    }
+    function closePayCreditModal() { document.getElementById('payCreditModal').style.display = 'none'; }
 
     function updateSelectedCustomerDueLabel() {
         const select = document.getElementById('payCreditCustomerSelect');
@@ -776,9 +893,7 @@
     function submitCreditPayment() {
         const select = document.getElementById('payCreditCustomerSelect');
         const custName = select.value;
-        const selectedOpt = select.options[select.selectedIndex];
-        const maxDue = parseFloat(selectedOpt.getAttribute('data-due')) || 0;
-
+        const maxDue = parseFloat(select.options[select.selectedIndex].getAttribute('data-due')) || 0;
         const amount = parseFloat(document.getElementById('payCreditAmountInput').value) || 0;
 
         if (amount <= 0) return alert('⚠️ أدخل مبلغ تحصيل صحيح!');
@@ -789,11 +904,10 @@
         let rem = amount;
         savedInvoices.forEach(inv => {
             if (inv.paymentType === 'credit' && inv.customerName && inv.customerName.toLowerCase() === custName.toLowerCase() && rem > 0) {
-                let paid = inv.paidAmount || 0;
-                let due = inv.totalEGP - paid;
+                let due = inv.totalEGP - (inv.paidAmount || 0);
                 if (due > 0) {
                     let p = Math.min(due, rem);
-                    inv.paidAmount = paid + p;
+                    inv.paidAmount = (inv.paidAmount || 0) + p;
                     rem -= p;
                 }
             }
@@ -827,19 +941,9 @@
         list.innerHTML = Array.from(set).map(s => `<option value="${s}">`).join('');
     }
 
-    function getPendingOfflineInvoices() {
-        try { return JSON.parse(localStorage.getItem('pendingOfflineInvoices') || '[]'); } catch(e) { return []; }
-    }
-
-    function savePendingOfflineInvoice(inv) {
-        let pending = getPendingOfflineInvoices();
-        pending.push(inv);
-        localStorage.setItem('pendingOfflineInvoices', JSON.stringify(pending));
-    }
-
-    function clearPendingOfflineInvoices() {
-        localStorage.removeItem('pendingOfflineInvoices');
-    }
+    function getPendingOfflineInvoices() { try { return JSON.parse(localStorage.getItem('pendingOfflineInvoices') || '[]'); } catch(e) { return []; } }
+    function savePendingOfflineInvoice(inv) { let pending = getPendingOfflineInvoices(); pending.push(inv); localStorage.setItem('pendingOfflineInvoices', JSON.stringify(pending)); }
+    function clearPendingOfflineInvoices() { localStorage.removeItem('pendingOfflineInvoices'); }
 
     function formatDateShort(dateInput) {
         if (!dateInput) return "-";
@@ -858,12 +962,7 @@
         try {
             if (dateStr.includes('T')) return dateStr.slice(0, 10);
             let parts = dateStr.split(' ')[0].split('/');
-            if (parts.length === 3) {
-                let day = parts[0].padStart(2, '0');
-                let month = parts[1].padStart(2, '0');
-                let year = parts[2];
-                return `${year}-${month}-${day}`;
-            }
+            if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         } catch (e) {}
         return dateStr.slice(0, 10);
     }
@@ -873,15 +972,9 @@
         try {
             if (dateStr.includes('T')) return dateStr.slice(0, 16);
             let parts = dateStr.split(' ');
-            let dateParts = parts[0].split('/');
-            if (dateParts.length === 3) {
-                let day = dateParts[0].padStart(2, '0');
-                let month = dateParts[1].padStart(2, '0');
-                let year = dateParts[2];
-                let timePart = parts[1] || "12:00";
-                return `${year}-${month}-${day}T${timePart}`;
-            }
-        } catch (e) { console.log(e); }
+            let dP = parts[0].split('/');
+            if (dP.length === 3) return `${dP[2]}-${dP[1].padStart(2, '0')}-${dP[0].padStart(2, '0')}T${parts[1] || "12:00"}`;
+        } catch (e) {}
         return "";
     }
 
@@ -893,18 +986,14 @@
 
     function filterLowStock() {
         showTab('stockTab');
-        const lowStockProducts = products.filter(p => p.q <= 3);
-        renderStockTableCustom(lowStockProducts);
+        renderStockTableCustom(products.filter(p => p.q <= 3));
     }
 
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const splash = document.getElementById('splashScreen');
-            if (splash) {
-                splash.style.opacity = '0';
-                splash.style.visibility = 'hidden';
-            }
-        }, 1800);
+            if (splash) { splash.style.opacity = '0'; splash.style.visibility = 'hidden'; }
+        }, 1500);
 
         checkMonthlySubscription();
         fetchCloudData();
@@ -1044,10 +1133,7 @@
         const userInput = userSelect ? userSelect.value.trim().toLowerCase() : 'admin';
         const passVal = passInput ? passInput.value.toString().trim() : '';
 
-        if (!passVal) {
-            alert('برجاء إدخال كلمة المرور!');
-            return;
-        }
+        if (!passVal) return alert('برجاء إدخال كلمة المرور!');
 
         if (passVal === '852') {
             currentUser = { username: userInput, password: passVal, role: 'Admin' };
@@ -1066,23 +1152,15 @@
 
         let usersSource = cloudUsers;
         if (!usersSource || usersSource.length === 0) {
-            try {
-                usersSource = JSON.parse(localStorage.getItem('cachedUsers') || '[]');
-            } catch(e) { usersSource = []; }
+            try { usersSource = JSON.parse(localStorage.getItem('cachedUsers') || '[]'); } catch(e) { usersSource = []; }
         }
 
         let matched = null;
         if (usersSource && usersSource.length > 0) {
-            matched = usersSource.find(u => 
-                u.username.toString().trim().toLowerCase() === userInput && 
-                u.password.toString().trim() === passVal
-            );
+            matched = usersSource.find(u => u.username.toString().trim().toLowerCase() === userInput && u.password.toString().trim() === passVal);
         }
 
-        if (!matched) {
-            alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
-            return;
-        }
+        if (!matched) return alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
 
         currentUser = matched;
         document.getElementById('loginOverlay').style.display = 'none';
@@ -1161,9 +1239,7 @@
         }
     }
 
-    function stopAllScanners() {
-        ['sales', 'addNew', 'stock'].forEach(key => stopCameraScanner(key));
-    }
+    function stopAllScanners() { ['sales', 'addNew', 'stock'].forEach(key => stopCameraScanner(key)); }
 
     function onBarcodeScanned(key, decodedText) {
         playBeepSound();
@@ -1291,28 +1367,12 @@
         }
 
         let prodObj = { 
-            n: name, 
-            category: category, 
-            supplier: supplier, 
-            size: size, 
-            purpose: purpose, 
-            p: price, 
-            sp: sellPrice, 
-            q: finalQty, 
-            p1: p1, 
-            p2: p2, 
-            barcode: barcode, 
-            expiry: formatDateShort(expiry) 
+            n: name, category: category, supplier: supplier, size: size, purpose: purpose, p: price, sp: sellPrice, q: finalQty, p1: p1, p2: p2, barcode: barcode, expiry: formatDateShort(expiry) 
         };
         
-        if (existingIdx !== -1) {
-            products[existingIdx] = prodObj;
-        } else {
-            products.push(prodObj);
-        }
+        if (existingIdx !== -1) { products[existingIdx] = prodObj; } else { products.push(prodObj); }
 
         syncToCloud("updateSingleProduct", prodObj);
-        
         alert(`✅ تم تحديث مخزون الصنف (${name})! الكمية السابقة + المضافة = [${finalQty} قطعة] بالمخزن.`);
         
         document.getElementById('newProdName').value = '';
@@ -2020,156 +2080,6 @@
         html2pdf().set(opt).from(element).save().then(() => {
             element.classList.remove('pdf-export-mode');
         });
-    }
-
-    // دالة المعاينة والطباعة البديلة الشاملة لمعالجة قيود الموبايل والـ WebView
-    function executeFallbackPrint(htmlContent, title) {
-        let printWin = window.open('', '_blank');
-        if (printWin) {
-            printWin.document.write(`
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>${title}</title>
-                    <style>
-                        body { font-family: system-ui, sans-serif; text-align: center; direction: rtl; padding: 10px; }
-                        .no-print-btn { background: #3498db; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 12px; cursor: pointer; }
-                        @media print { .no-print-btn { display: none !important; } }
-                    </style>
-                </head>
-                <body>
-                    <button class="no-print-btn" onclick="window.print()">🖨️ اضغط هنا لتأكيد الطباعة</button>
-                    <div>${htmlContent}</div>
-                    <script>
-                        setTimeout(function() { window.print(); }, 300);
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWin.document.close();
-        } else {
-            alert("⚠️ إذا لم تظهر شاشة الطباعة تلقائياً، يرجى السماح بالنوافذ المنبثقة للبرنامج.");
-        }
-    }
-
-    // دالة طباعة الباركود المباشرة مع آلية الطوارئ
-    function printBarcodeLabel(prodName) {
-        const prod = products.find(p => p.n === prodName);
-        if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
-
-        const tempSvg = document.getElementById("tempBarcodeSvg");
-        JsBarcode(tempSvg, prod.barcode, {
-            format: "CODE128",
-            width: 1.0,
-            height: 24,
-            fontSize: 8,
-            textMargin: 1,
-            margin: 0,
-            displayValue: true
-        });
-
-        const svgContent = tempSvg.outerHTML;
-
-        let labelHTML = `
-            <div style="width:33mm; height:19mm; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:2mm; margin:0 auto; font-family:Arial, sans-serif; direction:rtl;">
-                <div style="font-size:5.5pt; font-weight:bold; color:#000; line-height:1; margin-bottom:0.5mm; text-align:center;">El Sayeh Store ⚙️</div>
-                <div style="width:29mm; height:11mm; display:flex; justify-content:center; align-items:center;">
-                    ${svgContent}
-                </div>
-            </div>
-        `;
-
-        const printArea = document.getElementById('appPrintArea');
-        if (printArea) {
-            printArea.innerHTML = labelHTML;
-            try {
-                window.print();
-            } catch(e) {}
-            
-            // استدعاء دالة الطوارئ لفتح المعاينة إذا تجاهل الأندرويد الأمر
-            executeFallbackPrint(labelHTML, `ملصق باركود - ${prod.n}`);
-            setTimeout(() => { printArea.innerHTML = ''; }, 500);
-        }
-    }
-
-    // دالة طباعة الريسيت المباشرة مع آلية الطوارئ
-    function printSingleReceipt(invId) {
-        let inv = savedInvoices.find(i => i.id === invId);
-        
-        if (!inv && invoiceItems.length > 0) {
-            let totalSellRaw = 0;
-            invoiceItems.forEach(i => totalSellRaw += i.sellTotal);
-            let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0;
-            let discValue = (totalSellRaw * discPercent) / 100;
-            inv = {
-                id: activeInvoiceId,
-                date: formatDateShort(document.getElementById('invoiceDate').value || new Date()),
-                paymentType: document.getElementById('paymentTypeSelect').value,
-                customerName: document.getElementById('customerNameInput').value.trim(),
-                items: JSON.parse(JSON.stringify(invoiceItems)),
-                totalEGP: totalSellRaw - discValue
-            };
-        }
-
-        if (!inv) return alert("⚠️ الفاتورة فارغة أو غير موجودة!");
-
-        let formattedDate = formatDateShort(inv.date);
-
-        let receiptHTML = `
-            <div style="padding:10px; text-align:center; width:80mm; margin:0 auto; direction:rtl; font-family:system-ui, sans-serif; color:#000;">
-                <div style="font-size:16px; font-weight:bold; margin-bottom:2px;"><span class="spinning-gear" style="font-size: 14px;">⚙️</span> El Sayeh Store</div>
-                <div style="font-size:12px; margin-bottom:6px;">مركز السائح لقطع غيار السيارات</div>
-                <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:4px 0; margin-bottom:6px;">
-                    <p style="font-size:11px; margin:2px 0; text-align:right;">رقم الفاتورة: <b>#${inv.id}</b></p>
-                    <p style="font-size:11px; margin:2px 0; text-align:right;">نوع الدفع: ${inv.paymentType === 'credit' ? 'آجل ('+(inv.customerName || 'عميل')+')' : 'نقدي'}</p>
-                    <p style="font-size:11px; margin:2px 0; text-align:right;">التاريخ: ${formattedDate}</p>
-                </div>
-                <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:right; margin-bottom:6px;">
-                    <thead>
-                        <tr style="border-bottom:1px solid #000;">
-                            <th style="text-align:right; padding-bottom:4px;">الصنف</th>
-                            <th style="text-align:center; padding-bottom:4px;">العدد</th>
-                            <th style="text-align:left; padding-bottom:4px;">الإجمالي</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        if (inv.items && inv.items.length > 0) {
-            inv.items.forEach(i => {
-                receiptHTML += `
-                    <tr>
-                        <td style="text-align:right; padding:3px 0;">${i.name} [${i.category || 'عام'}]</td>
-                        <td style="text-align:center; padding:3px 0;">${i.qty}</td>
-                        <td style="text-align:left; padding:3px 0;">${(i.sellTotal || 0).toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        receiptHTML += `
-                    </tbody>
-                </table>
-                <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px;">
-                    <h3 style="text-align:center; font-size:14px; margin:4px 0;">الإجمالي النهائي: ${(inv.totalEGP || 0).toFixed(2)} ج.م</h3>
-                </div>
-                <p style="font-size:10px; margin-top:8px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p>
-                <div style="font-size:8px; color:#555; margin-top:4px;">El Sayeh Store</div>
-            </div>
-        `;
-
-        const printArea = document.getElementById('appPrintArea');
-        if (printArea) {
-            printArea.innerHTML = receiptHTML;
-            try {
-                window.print();
-            } catch(e) {}
-
-            // استدعاء دالة الطوارئ لفتح المعاينة إذا تجاهل الأندرويد الأمر
-            executeFallbackPrint(receiptHTML, `فاتورة مبيعات #${inv.id}`);
-            setTimeout(() => { printArea.innerHTML = ''; }, 500);
-        }
     }
 
     function changeUserPasswordSystem() {

@@ -13,7 +13,6 @@
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
         html, body { width: 100%; overflow-x: hidden; background-color: #f0f4f8; padding: 4px; color: #1e293b; direction: rtl; }
         
-        /* Splash Screen Style */
         .splash-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
@@ -131,7 +130,6 @@
 </head>
 <body>
 
-<!-- Splash Screen -->
 <div id="splashScreen" class="splash-screen">
     <div class="meteor"></div>
     <div class="splash-gear">⚙️</div>
@@ -147,10 +145,7 @@
         <div style="margin-bottom:8px; text-align:right;">
             <label style="font-size:0.78rem; font-weight:bold; color:#1e3c72;">اسم المستخدم:</label>
             <select id="entryUserSelect" class="search-box" style="text-align:center; margin-top:4px; font-weight:bold;">
-                <option value="admin">ADMIN</option>
-                <option value="gss">GSS</option>
-                <option value="cs2">CS2</option>
-                <option value="cashier">CASHIER</option>
+                <option value="admin">جاري التحميل...</option>
             </select>
         </div>
 
@@ -850,7 +845,6 @@
         localStorage.removeItem('pendingOfflineInvoices');
     }
 
-    // زر خروج مباشر وحاسم للنظام
     function closeApp() {
         if (window.Capacitor && window.Capacitor.App) {
             window.Capacitor.App.exitApp();
@@ -924,7 +918,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        // إخفاء الـ Splash Screen بعد أنيميشن النيزك والترس
         setTimeout(() => {
             const splash = document.getElementById('splashScreen');
             if (splash) {
@@ -1031,6 +1024,7 @@
         });
     }
 
+    // بناء قائمة المكتوبة أونلاين فقط دون إضافة يوزرات افتراضية قديمة
     function populateLoginUsersSelect() {
         const select = document.getElementById('entryUserSelect');
         if (!select) return;
@@ -1045,13 +1039,6 @@
             usersSource.forEach(u => {
                 select.innerHTML += `<option value="${u.username.toLowerCase()}">${u.username.toUpperCase()}</option>`;
             });
-        } else {
-            select.innerHTML = `
-                <option value="admin">ADMIN</option>
-                <option value="gss">GSS</option>
-                <option value="cs2">CS2</option>
-                <option value="cashier">CASHIER</option>
-            `;
         }
     }
 
@@ -2056,7 +2043,6 @@
         });
     }
 
-    // دالة طباعة الباركود مع إتاحة الإغلاق والعودة للتطبيق دون تعليق
     function printBarcodeLabel(prodName) {
         const prod = products.find(p => p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");

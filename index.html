@@ -89,7 +89,7 @@
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
         table { width: 100%; border-collapse: collapse; background: #fff; table-layout: auto; direction: rtl; }
         
-        /* ضبط الجداول لكسر السطر بدلاً من التمدد اللانهائي */
+        /* ضبط الجداول لكسر السطر */
         th, td { padding: 10px 6px; border: 1px solid #e2e8f0; text-align: center; font-size: 0.85rem; word-break: break-word; white-space: normal; vertical-align: middle; color: #1e293b !important; font-weight: 700; line-height: 1.5; }
         th { background: #fcf8e3; color: #1e3c72 !important; font-size: 0.9rem; border-bottom: 2px solid #3498db; font-weight: 800; white-space: nowrap; }
 
@@ -158,8 +158,8 @@
         </div>
 
         <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn btn-blue" style="margin-top:0;" onclick="validateEntryPassword()">تسجيل الدخول</button>
-            <button type="button" class="btn btn-red" style="margin-top:0;" onclick="closeApp()">خروج</button>
+            <button type="button" class="btn btn-blue" style="margin-top:0; flex: 2;" onclick="validateEntryPassword()">تسجيل الدخول</button>
+            <button type="button" class="btn btn-red" style="margin-top:0; flex: 1;" onclick="closeApp()">خروج</button>
         </div>
 
         <div class="footer-signature" style="margin-top:15px;">El Sayeh Store</div>
@@ -246,8 +246,8 @@
         <button class="tab-btn manager-only" id="btnAddStockTab" onclick="showTab('addStockTab', event)">➕ إضافة أصناف</button>
         <button class="tab-btn admin-only" id="btnCreditTab" onclick="showTab('creditTab', event)">📝 آجل العملاء</button>
         <button class="tab-btn admin-only" id="btnSuppliersTab" onclick="showTab('suppliersTab', event)">🚚 الموردين والمشتريات</button>
-        <button class="tab-btn admin-only" id="btnFinanceTab" onclick="showTab('financeTab', event)">💵 المصروفات</button>
         <button class="tab-btn admin-only" id="btnReportsTab" onclick="showTab('reportsTab', event)">📊 التقارير والإحصائيات</button>
+        <button class="tab-btn admin-only" id="btnFinanceTab" onclick="showTab('financeTab', event)">💵 المالية</button>
         <button class="tab-btn admin-only" id="btnUsersTab" onclick="showTab('usersTab', event)">🔑 الحسابات</button>
     </div>
 
@@ -351,10 +351,7 @@
 
     <!-- 2. تفاصيل المخزون -->
     <div id="stockTab" class="tab-content manager-only">
-        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
-            <span>📦 تفاصيل المخزون والباركود</span>
-            <div style="display: flex; gap: 4px;"></div>
-        </div>
+        <div class="section-title">📦 تفاصيل المخزون والباركود</div>
         <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة، التصنيف أو الباركود..." oninput="filterStockTable(this.value)">
 
         <div id="stockScannerContainer" class="scanner-box" style="margin-top:8px;">
@@ -362,15 +359,12 @@
             <button class="btn btn-red" style="margin:6px auto; width:90%; padding:6px;" onclick="stopCameraScanner('stock')">إغلاق الكاميرا ❌</button>
         </div>
 
-        <div id="stockPrintWrapper">
-            <h3 id="stockPrintTitle" class="report-title-header"></h3>
-            <div class="table-responsive"><table>
-                <thead>
-                    <tr><th>#</th><th>القطعة</th><th>التصنيف</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>الباركود</th><th>المورد</th><th class="no-pdf">إجراء</th></tr>
-                </thead>
-                <tbody id="stockTableBody"></tbody>
-            </table></div>
-        </div>
+        <div class="table-responsive"><table>
+            <thead>
+                <tr><th>#</th><th>القطعة</th><th>التصنيف</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>الباركود</th><th>المورد</th><th class="no-pdf">إجراء</th></tr>
+            </thead>
+            <tbody id="stockTableBody"></tbody>
+        </table></div>
     </div>
 
     <!-- 3. إضافة صنف جديد -->
@@ -522,7 +516,37 @@
         </div>
     </div>
 
-    <!-- 7. الأمان والكلمات السرية -->
+    <!-- 7. المالية والمصروفات -->
+    <div id="financeTab" class="tab-content admin-only">
+        <div class="section-title">💵 المصروفات والإيرادات (بالجنيه المصري)</div>
+        <div class="card">
+            <div class="form-grid">
+                <div class="field-box"><label>النوع:</label><select id="finType"><option value="Expense">مصروفات (-)</option><option value="Revenue">إيرادات إضافية (+)</option></select></div>
+                <div class="field-box"><label>البيان / البند:</label><input type="text" id="finCategory" placeholder="إيجار، كهرباء، صيانة، بضاعة..."></div>
+                <div class="field-box"><label>المبلغ (ج.م):</label><input type="number" id="finAmount" placeholder="0.00"></div>
+                <div class="field-box"><label>التاريخ والوقت:</label><input type="datetime-local" id="finDate"></div>
+            </div>
+            <button class="btn btn-purple" style="margin-top: 8px;" onclick="saveFinanceEntry()">حفظ الحركة المالية 💾</button>
+        </div>
+
+        <div id="financeSummaryBox" class="totals-box" style="margin-top:10px; margin-bottom:10px;">
+            <div class="totals-grid">
+                <div class="total-item">إجمالي المصروفات <span id="finTotalExpensesVal" style="color:#e74c3c;">0.00 ج.م</span></div>
+                <div class="total-item">إجمالي الإيرادات <span id="finTotalRevenuesVal" style="color:#27ae60;">0.00 ج.م</span></div>
+                <div class="total-item" style="grid-column: span 2;">صافي الحركة المالية <span id="finNetBalanceVal" style="font-size:1.1rem; color:#1e3c72;">0.00 ج.م</span></div>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top:12px;">📊 سجل الحركات المالية المسجلة</div>
+        <div class="table-responsive"><table>
+            <thead>
+                <tr><th>#</th><th>التاريخ والوقت</th><th>النوع</th><th>البيان / البند</th><th>المبلغ (ج.م)</th><th>خيارات وإجراءات</th></tr>
+            </thead>
+            <tbody id="financeTableBody"><tr><td colspan="6">لا توجد حركات مالية مسجلة بعد</td></tr></tbody>
+        </table></div>
+    </div>
+
+    <!-- 8. الأمان والكلمات السرية -->
     <div id="usersTab" class="tab-content admin-only">
         <div class="section-title">🔑 إدارة الحسابات وتغيير كلمة المرور</div>
         <div class="card" style="max-width:350px; margin:0 auto;">
@@ -767,7 +791,7 @@
         setTimeout(() => {
             const splash = document.getElementById('splashScreen');
             if (splash) { splash.style.opacity = '0'; splash.style.visibility = 'hidden'; }
-        }, 1500);
+        }, 1800);
 
         checkMonthlySubscription();
         fetchCloudData();
@@ -814,11 +838,14 @@
                     if (resData && resData.status === "success") {
                         if (resData.users && resData.users.length > 0) { cloudUsers = resData.users; localStorage.setItem('cachedUsers', JSON.stringify(cloudUsers)); populateUsersDropdown(); populateLoginUsersSelect(); }
                         if (resData.products) {
+                            // حماية قوية ضد الصفوف الفارغة في الشيت
                             resData.products.forEach(cloudP => {
-                                let localP = products.find(p => p.n && cloudP.n && String(p.n).trim().toLowerCase() === String(cloudP.n).trim().toLowerCase());
+                                if (!cloudP || !cloudP.n) return;
+                                let localP = products.find(p => p.n && String(p.n).trim().toLowerCase() === String(cloudP.n).trim().toLowerCase());
                                 if (localP && localP.category && (!cloudP.category || String(cloudP.category).trim() === 'عام')) cloudP.category = localP.category;
                             });
-                            products = resData.products;
+                            // تنظيف المصفوفة من العناصر الفارغة
+                            products = resData.products.filter(p => p && p.n);
                         }
                         if (resData.suppliers) suppliers = resData.suppliers;
                         if (resData.invoices) {
@@ -947,7 +974,7 @@
 
     function isBarcodeExists(barcode, currentProdName = '') {
         if (!barcode || barcode.trim() === '') return false;
-        return products.some(p => p.barcode && p.barcode.trim().toLowerCase() === barcode.trim().toLowerCase() && p.n.toLowerCase() !== currentProdName.toLowerCase());
+        return products.some(p => p.barcode && p.barcode.trim().toLowerCase() === barcode.trim().toLowerCase() && p.n && p.n.toLowerCase() !== currentProdName.toLowerCase());
     }
 
     function isProductNameExists(prodName, currentProdName = '') {
@@ -975,7 +1002,7 @@
         
         prod.n = newName; prod.category = newCategory; prod.supplier = newSupplier; prod.size = newSize; prod.purpose = newPurpose;
         prod.p = newP; prod.sp = newSp; prod.q = newQ;
-        prod.p1 = ""; prod.p2 = ""; // تم مسح الشركاء
+        prod.p1 = ""; prod.p2 = "";
 
         syncToCloud("updateSingleProduct", prod); alert(`✅ تم تحديث بيانات المنتج (${newName}) أونلاين بنجاح!`); renderStockTable(); updateProductsDatalist(); populateCategoryDropdown();
     }
@@ -997,7 +1024,7 @@
         if (!name) return alert('أدخل اسم الصنف أولاً!');
         if (!barcode) { do { barcode = "200" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(barcode)); }
 
-        let existingIdx = products.findIndex(p => p.n.trim().toLowerCase() === name.toLowerCase()); let finalQty = addedQty;
+        let existingIdx = products.findIndex(p => p.n && p.n.trim().toLowerCase() === name.toLowerCase()); let finalQty = addedQty;
         if (existingIdx !== -1) { let oldQty = products[existingIdx].q || 0; finalQty = oldQty + addedQty; }
 
         let prodObj = { n: name, category: category, supplier: supplier, size: size, purpose: purpose, p: price, sp: sellPrice, q: finalQty, p1: "", p2: "", barcode: barcode, expiry: formatDateShort(expiry) };
@@ -1023,9 +1050,9 @@
                 <td>${i.size || '-'}</td>
                 <td>${i.purpose || '-'}</td>
                 <td>${(i.p || 0).toFixed(2)}</td>
-                <td style="font-weight:bold;">${(i.sp || 0).toFixed(2)}</td>
+                <td style="font-weight:bold; color:#27ae60;">${(i.sp || 0).toFixed(2)}</td>
                 <td style="font-weight:bold; color:${isLow ? '#e74c3c' : '#000'};">${i.q} قطعة ${isLow ? '⚠️' : ''}</td>
-                <td style="font-family:monospace; font-weight:bold; font-size:0.68rem;">${i.barcode || '-'}</td>
+                <td style="font-family:monospace; font-weight:bold; font-size:0.68rem; direction:ltr;">${i.barcode || '-'}</td>
                 <td style="font-weight:bold;">${i.supplier || 'غير محدد'}</td>
                 <td class="no-pdf">
                     <div class="action-btn-group">
@@ -1043,7 +1070,7 @@
     }
 
     function renderStockTable(filter = '') {
-        const matched = products.filter(i => (i.n && i.n.toLowerCase().includes(filter.toLowerCase())) || (i.category && i.category.toLowerCase().includes(filter.toLowerCase())) || (i.barcode && i.barcode.toLowerCase().includes(filter.toLowerCase())));
+        const matched = products.filter(i => (i.n && String(i.n).toLowerCase().includes(filter.toLowerCase())) || (i.category && String(i.category).toLowerCase().includes(filter.toLowerCase())) || (i.barcode && String(i.barcode).toLowerCase().includes(filter.toLowerCase())));
         renderStockTableCustom(matched);
     }
 
@@ -1069,10 +1096,10 @@
     function searchProduct() {
         const query = document.getElementById('searchInput').value.toLowerCase().trim(); const list = document.getElementById('searchResults');
         if (!query) { list.style.display = 'none'; return; }
-        const barcodeMatched = products.find(item => item && item.barcode && item.barcode.toString().toLowerCase().trim() === query);
+        const barcodeMatched = products.find(item => item && item.barcode && String(item.barcode).toLowerCase().trim() === query);
         if (barcodeMatched) { playBeepSound(); pickProductIndex(products.indexOf(barcodeMatched)); list.style.display = 'none'; return; }
 
-        const matched = products.filter(item => item && item.n && item.n.toLowerCase().includes(query));
+        const matched = products.filter(item => item && item.n && String(item.n).toLowerCase().includes(query));
         if (matched.length > 0) { list.innerHTML = matched.map(i => { const idx = products.indexOf(i); return `<div class="result-item" onclick="pickProductIndex(${idx})"><span style="color:#1e3c72; font-weight:bold;">${i.n}</span><span>(المخزون: ${i.q})</span></div>`; }).join(''); list.style.display = 'block'; } else { list.style.display = 'none'; }
     }
 
@@ -1096,7 +1123,7 @@
     function renderInvoice() {
         const tbody = document.getElementById('invoiceTableBody'); let subTotalEGP = 0;
         if (invoiceItems.length === 0) { tbody.innerHTML = '<tr><td colspan="8">لم يتم إضافة أصناف بعد</td></tr>'; } else {
-            tbody.innerHTML = invoiceItems.map((item, index) => { subTotalEGP += item.sellTotal; return `<tr><td>${index + 1}</td><td style="font-weight:bold;">${item.name}</td><td style="color:#1e3c72;">${item.category || 'عام'}</td><td>${item.qty}</td><td>${item.commUnitPrice.toFixed(2)}</td><td>${item.sellUnitPrice.toFixed(2)}</td><td style="font-weight:bold;">${item.sellTotal.toFixed(2)}</td><td><button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem; margin:0;" onclick="removeInvoiceItem(${index})">حذف</button></td></tr>`; }).join('');
+            tbody.innerHTML = invoiceItems.map((item, index) => { subTotalEGP += item.sellTotal; return `<tr><td>${index + 1}</td><td style="font-weight:bold;">${item.name}</td><td style="color:#1e3c72;">${item.category || 'عام'}</td><td>${item.qty}</td><td>${item.commUnitPrice.toFixed(2)}</td><td>${item.sellUnitPrice.toFixed(2)}</td><td style="font-weight:bold; color:#27ae60;">${item.sellTotal.toFixed(2)}</td><td><button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem; margin:0;" onclick="removeInvoiceItem(${index})">حذف</button></td></tr>`; }).join('');
         }
         const discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0; const discValue = (subTotalEGP * discPercent) / 100; const finalNetEGP = subTotalEGP - discValue;
         document.getElementById('subTotalEGP').textContent = subTotalEGP.toFixed(2); document.getElementById('discountValEGP').textContent = discValue.toFixed(2); document.getElementById('liveTotalEGP').textContent = finalNetEGP.toFixed(2) + ' ج.م';
@@ -1145,8 +1172,8 @@
 
             rows.push(`
                 <tr>
-                    <td style="font-size:1.1rem;">${statusBadge}</td><td>${rows.length + 1}</td><td style="font-weight:bold;">${inv.customerName || 'غير محدد'}</td><td style="font-weight:bold; font-size:0.75rem; color:#16a085; direction:ltr;">${inv.customerPhone || '-'}</td><td style="font-weight:bold;">#${inv.id}</td><td style="white-space:nowrap;">${formatDateShort(inv.date)}</td><td style="text-align:right; font-size:0.75rem;">${inv.itemsText || '-'}</td><td style="font-weight:bold;">${(parseFloat(inv.totalEGP) || 0).toFixed(2)} ج.م</td><td>${paid.toFixed(2)} ج.م</td><td style="font-weight:bold; color:${due > 0 ? '#e74c3c' : '#27ae60'};">${due.toFixed(2)} ج.م</td><td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
-                    <td>
+                    <td style="font-size:1.1rem;">${statusBadge}</td><td>${rows.length + 1}</td><td style="font-weight:bold;">${inv.customerName || 'غير محدد'}</td><td style="font-weight:bold; font-size:0.75rem; color:#16a085; direction:ltr;">${inv.customerPhone || '-'}</td><td style="font-weight:bold;">#${inv.id}</td><td style="white-space:nowrap;">${formatDateShort(inv.date)}</td><td style="text-align:right; font-size:0.75rem;">${inv.itemsText || '-'}</td><td style="font-weight:bold; color:#27ae60;">${(parseFloat(inv.totalEGP) || 0).toFixed(2)} ج.م</td><td>${paid.toFixed(2)} ج.م</td><td style="font-weight:bold; color:${due > 0 ? '#e74c3c' : '#27ae60'};">${due.toFixed(2)} ج.م</td><td>${inv.items && inv.items[0] ? inv.items[0].seller : 'عام'}</td>
+                    <td class="no-pdf">
                         <div class="action-btn-group">
                             <button class="btn btn-purple" style="padding:4px 8px; font-size:0.75rem; margin:1px;" onclick="sendWhatsAppReminder('${inv.customerName}', '${inv.customerPhone || ''}')">تذكير 💬</button>
                             <button class="btn btn-blue" style="padding:4px 8px; font-size:0.75rem; margin:1px;" onclick="editCreditCustomerDetails('${inv.customerName}', '${inv.customerPhone || ''}')">تعديل</button>
@@ -1175,7 +1202,7 @@
 
         let rows = []; let index = 1;
         mergedMap.forEach((data, suppName) => {
-            rows.push(`<tr><td>${index++}</td><td style="font-weight:bold;">${suppName}</td><td style="direction:ltr;">${data.phone1}</td><td style="direction:ltr;">${data.phone2}</td><td>${data.address}</td><td style="font-size:0.75rem;">${data.notes}</td><td style="text-align:right; font-size:0.75rem;">${data.productsList.length > 0 ? data.productsList.join(', ') : 'لا يوجد أصناف تابعة'}</td><td style="font-weight:bold;">${data.totalQty} قطعة</td><td style="font-weight:bold;">${data.totalCost.toFixed(2)} ج.م</td><td><button class="btn btn-blue" style="padding:4px 8px; font-size:0.75rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button></td></tr>`);
+            rows.push(`<tr><td>${index++}</td><td style="font-weight:bold;">${suppName}</td><td style="direction:ltr;">${data.phone1}</td><td style="direction:ltr;">${data.phone2}</td><td>${data.address}</td><td style="font-size:0.75rem;">${data.notes}</td><td style="text-align:right; font-size:0.75rem;">${data.productsList.length > 0 ? data.productsList.join(', ') : 'لا يوجد أصناف تابعة'}</td><td style="font-weight:bold;">${data.totalQty} قطعة</td><td style="font-weight:bold; color:#1e3c72;">${data.totalCost.toFixed(2)} ج.م</td><td class="no-pdf"><button class="btn btn-blue" style="padding:4px 8px; font-size:0.75rem; margin:0;" onclick="openSupplierModal('${suppName}', '${data.phone1 !== '-' ? data.phone1 : ''}', '${data.phone2 !== '-' ? data.phone2 : ''}', '${data.address !== '-' ? data.address : ''}', '${data.notes !== '-' ? data.notes : ''}')">✏️ تعديل</button></td></tr>`);
         });
 
         if (rows.length === 0) tbody.innerHTML = '<tr><td colspan="10">لا توجد بيانات موردين مطابقة</td></tr>'; else tbody.innerHTML = rows.join('');
@@ -1196,11 +1223,10 @@
         if (confirm(`⚠️ هل أنت تأكد من حذف الفاتورة رقم #${invId}؟ سيتم مسحها من السيرفر وإرجاع كمياتها للمخزون.`)) {
             const inv = savedInvoices[invIndex];
             if (inv.items && Array.isArray(inv.items)) { inv.items.forEach(item => { const pObj = products.find(p => p.n === item.name); if (pObj) { pObj.q += item.qty; syncToCloud("updateSingleProduct", pObj); } }); }
-            savedInvoices.splice(invIndex, 1); syncToCloud("deleteInvoice", { id: invId }); renderStockTable(); renderCreditReport(); generateReport(); updateLowStockAlert(); alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
+            savedInvoices.splice(invIndex, 1); syncToCloud("deleteInvoice", { id: invId }); renderStockTable(); renderCreditReport(); updateLowStockAlert(); alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
         }
     }
 
-    // منطق التقارير الشامل المحدث
     function generateReport() {
         const fromD = document.getElementById('fromDate').value; const toD = document.getElementById('toDate').value;
         const selectedCategory = document.getElementById('categoryFilterSelect') ? document.getElementById('categoryFilterSelect').value : "ALL";
@@ -1261,7 +1287,6 @@
             return;
         }
 
-        // Logic for Sales, Profits & Charts
         let totalSell = 0, totalComm = 0, totalNetProfit = 0;
         let reportRows = []; let categoryMap = new Map(); let dailyMap = new Map(); let topItemsMap = new Map();
 
@@ -1286,9 +1311,9 @@
 
                 totalSell += invSell; totalComm += invComm; totalNetProfit += invProfit;
                 if(invD) dailyMap.set(invD, (dailyMap.get(invD) || 0) + invSell);
-                let payTypeTag = inv.paymentType === 'credit' ? `<br><span>آجل: ${inv.customerName || 'عميل'}</span>` : '<br><span>نقدي</span>';
+                let payTypeTag = inv.paymentType === 'credit' ? `<br><span style="color:#e74c3c;">آجل: ${inv.customerName || 'عميل'}</span>` : '<br><span style="color:#27ae60;">نقدي</span>';
 
-                reportRows.push(`<tr><td>${reportRows.length + 1}</td><td style="font-weight:bold;">#${inv.id}</td><td style="font-weight:bold;">${payTypeTag}</td><td style="white-space:nowrap; font-weight:bold; font-size:0.75rem;">${formatDateShort(inv.date)}</td><td style="text-align:right; font-size:0.8rem; line-height:1.4;">${itemsTextList.join('<br>')}</td><td>${invComm.toFixed(2)} ج.م</td><td style="font-weight:bold;">${invSell.toFixed(2)} ج.م</td><td style="font-weight:bold;">${invProfit.toFixed(2)} ج.م</td><td class="no-pdf"><button class="btn btn-blue" style="padding:4px 8px; font-size:0.75rem; margin:1px;" onclick="printSingleReceipt(${inv.id})">إيصال</button></td></tr>`);
+                reportRows.push(`<tr><td>${reportRows.length + 1}</td><td style="font-weight:bold;">#${inv.id}</td><td style="font-weight:bold;">${payTypeTag}</td><td style="white-space:nowrap; font-weight:bold; font-size:0.75rem;">${formatDateShort(inv.date)}</td><td style="text-align:right; font-size:0.8rem; line-height:1.4;">${itemsTextList.join('<br>')}</td><td>${invComm.toFixed(2)} ج.م</td><td style="font-weight:bold; color:#27ae60;">${invSell.toFixed(2)} ج.م</td><td style="font-weight:bold; color:#1e3c72;">${invProfit.toFixed(2)} ج.م</td><td class="no-pdf"><div class="action-btn-group"><button class="btn btn-blue" style="padding:4px 8px; font-size:0.75rem; margin:1px;" onclick="printSingleReceipt(${inv.id})">إيصال</button><button class="btn btn-orange" style="padding:4px 8px; font-size:0.75rem; margin:1px;" onclick="editSingleInvoice(${inv.id})">تعديل</button><button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem; margin:1px;" onclick="deleteSingleInvoice(${inv.id})">حذف</button></div></td></tr>`);
             }
         });
 
@@ -1305,14 +1330,12 @@
             
             if(window.cCat) window.cCat.destroy(); if(window.cDay) window.cDay.destroy(); if(window.cTop) window.cTop.destroy();
             
-            // 1. Top 15 Products Bar Chart
             let sortedItems = Array.from(topItemsMap.entries()).sort((a,b) => b[1] - a[1]).slice(0,15);
             window.cCat = new Chart(document.getElementById('chartTopProducts'), { type: 'bar', data: { labels: sortedItems.map(i=>i[0]), datasets: [{ label: 'أكثر الأصناف مبيعاً (كمية)', data: sortedItems.map(i=>i[1]), backgroundColor: 'rgba(39, 174, 96, 0.8)', borderRadius: 4 }] }, options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'أكثر 15 قطعة مبيعاً', font: {size: 16, family:'Cairo'} } } } });
 
-            // 2. Top 5 Suppliers Doughnut Chart (Based on Inventory Cost Value)
             let supplierMap = new Map();
             products.forEach(p => {
-                let supp = p.supplier && p.supplier.trim() !== "" ? p.supplier.trim() : "غير محدد";
+                let supp = p.supplier && String(p.supplier).trim() !== "" ? String(p.supplier).trim() : "غير محدد";
                 let cost = (parseFloat(p.p) || 0) * (parseInt(p.q) || 0);
                 supplierMap.set(supp, (supplierMap.get(supp) || 0) + cost);
             });
@@ -1320,7 +1343,6 @@
             const niceColors = ['#3498db', '#9b59b6', '#e67e22', '#e74c3c', '#f1c40f'];
             window.cTop = new Chart(document.getElementById('chartTopSuppliers'), { type: 'doughnut', data: { labels: topSuppliers.map(i=>i[0]), datasets: [{ data: topSuppliers.map(i=>i[1]), backgroundColor: niceColors, borderWidth: 2 }] }, options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'أعلى 5 موردين (من حيث تكلفة البضاعة بالمخزن)', font: {size: 16, family:'Cairo'} } } } });
 
-            // 3. Daily Sales Line Chart
             let days = Array.from(dailyMap.keys()).sort(); let daySales = days.map(d => dailyMap.get(d));
             window.cDay = new Chart(document.getElementById('chartDailySales'), { type: 'line', data: { labels: days, datasets: [{ label: 'إجمالي المبيعات اليومية (ج.م)', data: daySales, borderColor: '#1e3c72', backgroundColor: 'rgba(30, 60, 114, 0.15)', fill: true, tension: 0.4 }] }, options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'حركة المبيعات خلال الفترة', font: {size: 16, family:'Cairo'} } } } });
 
@@ -1328,7 +1350,7 @@
             chartsArea.style.display = 'none'; reportTablesArea.style.display = 'block'; document.getElementById('profitBox').style.display = 'block';
             document.getElementById('reportPrintTitle').innerHTML = `💵 تقرير المبيعات والأرباح التفصيلي <br><span style="font-size:10pt; color:#666;">(${fromD||'بداية'} ➡ ${toD||'اليوم'})</span>`; document.getElementById('reportPrintTitle').style.display = 'block';
 
-            let tableHTML = `<thead><tr style="background:#f39c12; color:#fff;"><th>#</th><th>الفاتورة</th><th>نوع الدفع</th><th>التاريخ</th><th>الأصناف (الاسم والتصنيف)</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th class="no-pdf">إجراء</th></tr></thead><tbody>`;
+            let tableHTML = `<thead><tr style="background:#f39c12; color:#fff;"><th>#</th><th>الفاتورة</th><th>الدفع</th><th>التاريخ</th><th>الأصناف (الاسم والتصنيف)</th><th>التكلفة</th><th>البيع</th><th>الربح</th><th class="no-pdf">إجراء</th></tr></thead><tbody>`;
             if (reportRows.length === 0) tableHTML += '<tr><td colspan="9">لا توجد مبيعات مطابقة لهذا التصفية/الفترة</td></tr>'; else tableHTML += reportRows.join('');
             tableHTML += `</tbody>`; document.getElementById('mainReportTable').innerHTML = tableHTML;
 
@@ -1375,7 +1397,6 @@
         } catch (err) { console.error('PDF Error:', err); window.print(); } finally { if (!isChartsMode) element.classList.remove('pdf-compact'); }
     }
 
-    // Modal Control Functions للموبايل (طباعة الليبل والريسيت)
     let currentPrintHtml = ''; let currentPrintTextPayload = '';
     function openPrintModal(htmlContent, textPayload) {
         currentPrintHtml = htmlContent; currentPrintTextPayload = textPayload;

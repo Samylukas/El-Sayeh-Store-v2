@@ -575,7 +575,11 @@
 <div id="hiddenBarcodeTemp" style="display:none; position:absolute; left:-9999px;"><svg id="tempBarcodeSvg"></svg></div>
 
 <script>
-    // إعدادات خط Chart.js لتطابق Cairo
+    // Safe String Trim (الحماية من البيانات الفارغة من شيت جوجل)
+    function safeStr(val) {
+        return val ? String(val).trim() : '';
+    }
+
     Chart.defaults.font.family = "'Cairo', system-ui, -apple-system, sans-serif";
     Chart.defaults.color = '#333';
     
@@ -603,22 +607,22 @@
     }
 
     function verifyActivationCode() {
-        const code = document.getElementById('activationCodeInput').value.trim();
+        const code = safeStr(document.getElementById('activationCodeInput').value);
         if (code === 'ABS') { localStorage.setItem('appLastActivatedDate', new Date().toISOString()); document.getElementById('activationOverlay').style.display = 'none'; alert('✅ تم تفعيل الاشتراك للشهر الجديد بنجاح!'); } else { alert('❌ كود التفعيل غير صحيح!'); }
     }
 
     function applyPhoneMask(input) {
-        let val = input.value.replace(/\D/g, ''); if (val.length > 11) val = val.slice(0, 11);
+        let val = safeStr(input.value).replace(/\D/g, ''); if (val.length > 11) val = val.slice(0, 11);
         let formatted = ''; if (val.length > 0) formatted += val.substring(0, 4); if (val.length > 4) formatted += '/' + val.substring(4, 7); if (val.length > 7) formatted += '/' + val.substring(7, 11); input.value = formatted;
     }
 
     function editCreditCustomerDetails(oldName, oldPhone) {
-        const newName = prompt("تعديل اسم العميل:", oldName); if (!newName || String(newName).trim() === '') return;
+        const newName = prompt("تعديل اسم العميل:", oldName); if (!newName || safeStr(newName) === '') return;
         const newPhone = prompt("تعديل رقم هاتف الواتساب:", oldPhone || '');
         let updated = false;
         savedInvoices.forEach(inv => {
-            if (inv.paymentType === 'credit' && inv.customerName && String(inv.customerName).trim().toLowerCase() === String(oldName).trim().toLowerCase()) {
-                inv.customerName = String(newName).trim(); inv.customerPhone = newPhone ? String(newPhone).trim() : ''; syncToCloud("saveInvoice", inv); updated = true;
+            if (inv && inv.paymentType === 'credit' && inv.customerName && safeStr(inv.customerName).toLowerCase() === safeStr(oldName).toLowerCase()) {
+                inv.customerName = safeStr(newName); inv.customerPhone = newPhone ? safeStr(newPhone) : ''; syncToCloud("saveInvoice", inv); updated = true;
             }
         });
         if (updated) { updateCustomersDatalist(); renderCreditReport(); alert(`✅ تم تحديث بيانات العميل (${newName}) بنجاح!`); }
@@ -626,8 +630,8 @@
 
     function autoFillProductFields(val) {
         const labelElem = document.getElementById('qtyFieldLabel');
-        if (!val || String(val).trim() === '') { if (labelElem) labelElem.textContent = "الكمية المضافة (الواردة):"; return; }
-        const matched = products.find(p => p && p.n && String(p.n).trim().toLowerCase() === String(val).trim().toLowerCase());
+        if (!val || safeStr(val) === '') { if (labelElem) labelElem.textContent = "الكمية المضافة (الواردة):"; return; }
+        const matched = products.find(p => p && p.n && safeStr(p.n).toLowerCase() === safeStr(val).toLowerCase());
         if (matched) {
             document.getElementById('newProdCategory').value = matched.category || '';
             document.getElementById('newProdSize').value = matched.size || '';
@@ -646,23 +650,23 @@
         const list = document.getElementById('allProductsDatalist');
         if (list) list.innerHTML = products.map(p => `<option value="${p.n}">`).join('');
         const catList = document.getElementById('categoriesDatalist');
-        if (catList) { let set = new Set(); products.forEach(p => { if (p && p.category) set.add(String(p.category).trim()); }); catList.innerHTML = Array.from(set).map(c => `<option value="${c}">`).join(''); }
+        if (catList) { let set = new Set(); products.forEach(p => { if (p && p.category) set.add(safeStr(p.category)); }); catList.innerHTML = Array.from(set).map(c => `<option value="${c}">`).join(''); }
     }
 
     function populateCategoryDropdown() {
         const select = document.getElementById('categoryFilterSelect');
         if (!select) return;
         let categories = new Set();
-        products.forEach(p => { if (p && p.category && String(p.category).trim() !== "") categories.add(String(p.category).trim()); });
+        products.forEach(p => { if (p && p.category && safeStr(p.category) !== "") categories.add(safeStr(p.category)); });
         select.innerHTML = '<option value="ALL">الكل (جميع التصنيفات)</option>';
         categories.forEach(cat => select.innerHTML += `<option value="${cat}">${cat}</option>`);
     }
 
     function sendWhatsAppReminder(custName, registeredPhone) {
         let phone = registeredPhone;
-        if (!phone || String(phone).trim() === '' || phone === '-') { phone = prompt(`أدخل رقم هاتف الواتساب للعميل (${custName}):`); }
+        if (!phone || safeStr(phone) === '' || phone === '-') { phone = prompt(`أدخل رقم هاتف الواتساب للعميل (${custName}):`); }
         if (!phone) return;
-        phone = String(phone).replace(/[^0-9]/g, ''); if (!phone.startsWith('20') && phone.length === 11) phone = '2' + phone;
+        phone = safeStr(phone).replace(/[^0-9]/g, ''); if (!phone.startsWith('20') && phone.length === 11) phone = '2' + phone;
         const rawMsg = "مساء الخير يا فندم 🌸\nنود تذكير سيادتكم بموعد سداد الحساب الآجل المستحق لـ مركز السائح لقطع غيار السيارات.\nشاكرين لسيادتكم حسن التعامل والالتزام المعهود، ونتشرف بزيارتكم دائماً! ⚙️";
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(rawMsg)}`, '_blank');
     }
@@ -677,10 +681,10 @@
     function closeSupplierModal() { document.getElementById('supplierModal').style.display = 'none'; }
 
     function saveSupplierFromModal() {
-        const name = document.getElementById('suppModalName').value.trim(); const phone1 = document.getElementById('suppModalPhone1').value.trim(); const phone2 = document.getElementById('suppModalPhone2').value.trim(); const address = document.getElementById('suppModalAddress').value.trim(); const notes = document.getElementById('suppModalNotes').value.trim();
+        const name = safeStr(document.getElementById('suppModalName').value); const phone1 = safeStr(document.getElementById('suppModalPhone1').value); const phone2 = safeStr(document.getElementById('suppModalPhone2').value); const address = safeStr(document.getElementById('suppModalAddress').value); const notes = safeStr(document.getElementById('suppModalNotes').value);
         if (!name) return alert('أدخل اسم المورد أولاً!');
         let suppObj = { name: name, phone1: phone1, phone2: phone2, address: address, notes: notes };
-        let idx = suppliers.findIndex(s => s && s.name && String(s.name).toLowerCase() === String(name).toLowerCase());
+        let idx = suppliers.findIndex(s => s && s.name && safeStr(s.name).toLowerCase() === name.toLowerCase());
         if (idx !== -1) suppliers[idx] = suppObj; else suppliers.push(suppObj);
         syncToCloud("saveSupplier", suppObj); closeSupplierModal(); updateSuppliersDatalist(); renderSuppliersReport(); alert(`✅ تم حفظ بيانات المورد (${name}) بنجاح!`);
     }
@@ -712,7 +716,7 @@
         syncToCloud("payCredit", { customerName: custName, amount: amount });
         let rem = amount;
         savedInvoices.forEach(inv => {
-            if (inv && inv.paymentType === 'credit' && inv.customerName && String(inv.customerName).toLowerCase() === String(custName).toLowerCase() && rem > 0) {
+            if (inv && inv.paymentType === 'credit' && inv.customerName && safeStr(inv.customerName).toLowerCase() === safeStr(custName).toLowerCase() && rem > 0) {
                 let due = inv.totalEGP - (inv.paidAmount || 0);
                 if (due > 0) { let p = Math.min(due, rem); inv.paidAmount = (inv.paidAmount || 0) + p; rem -= p; }
             }
@@ -756,7 +760,7 @@
 
     function formatDateShort(dateInput) {
         if (!dateInput) return "-"; let d = new Date(dateInput);
-        if (isNaN(d.getTime())) return String(dateInput).replace(/GMT.*/, '').trim();
+        if (isNaN(d.getTime())) return safeStr(dateInput).replace(/GMT.*/, '');
         let day = String(d.getDate()).padStart(2, '0'); let month = String(d.getMonth() + 1).padStart(2, '0'); let year = d.getFullYear();
         let hours = String(d.getHours()).padStart(2, '0'); let minutes = String(d.getMinutes()).padStart(2, '0');
         return `${day}/${month}/${year} ${hours}:${minutes}`;
@@ -765,18 +769,18 @@
     function extractDateYYYYMMDD(dateStr) {
         if (!dateStr) return "";
         try {
-            let str = String(dateStr);
+            let str = safeStr(dateStr);
             if (str.includes('T')) return str.slice(0, 10);
             let parts = str.split(' ')[0].split('/');
             if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         } catch (e) {}
-        return String(dateStr).slice(0, 10);
+        return safeStr(dateStr).slice(0, 10);
     }
 
     function parseFormattedDateToISO(dateStr) {
         if (!dateStr) return "";
         try {
-            let str = String(dateStr);
+            let str = safeStr(dateStr);
             if (str.includes('T')) return str.slice(0, 16);
             let parts = str.split(' '); let dP = parts[0].split('/');
             if (dP.length === 3) return `${dP[2]}-${dP[1].padStart(2, '0')}-${dP[0].padStart(2, '0')}T${parts[1] || "12:00"}`;
@@ -803,7 +807,7 @@
 
         checkMonthlySubscription();
         
-        // الاتصال مباشرة بكود جلب البيانات الأصلي
+        // الاتصال مباشرة بكود جلب البيانات الأصلي والمستقر
         fetchCloudData();
 
         window.addEventListener('keydown', (e) => {
@@ -840,7 +844,7 @@
         clearPendingOfflineInvoices(); setTimeout(() => { if (callback) callback(); }, 1500);
     }
 
-    // الدالة الأصلية المطابقة للكود اللي كان شغال معاك، مع تعديل طفيف جداً لحماية الـ trim
+    // الدالة الأصلية والمستقرة 100% لقراءة البيانات (تم تنظيفها لتخطي أي صف فارغ)
     function fetchCloudData() {
         syncPendingInvoicesFirst(() => {
             window.handleCloudInvoicesResponse = function(resData) {
@@ -856,8 +860,9 @@
                         let validProducts = [];
                         resData.products.forEach(cloudP => {
                             if(cloudP && cloudP.n) {
-                                let localP = products.find(p => p && p.n && String(p.n).trim().toLowerCase() === String(cloudP.n).trim().toLowerCase());
-                                if (localP && localP.category && (!cloudP.category || String(cloudP.category).trim() === 'عام')) {
+                                let cName = safeStr(cloudP.n).toLowerCase();
+                                let localP = products.find(p => p && p.n && safeStr(p.n).toLowerCase() === cName);
+                                if (localP && localP.category && (!cloudP.category || safeStr(cloudP.category) === 'عام' || safeStr(cloudP.category) === '')) {
                                     cloudP.category = localP.category;
                                 }
                                 validProducts.push(cloudP);
@@ -888,7 +893,7 @@
         let usersSource = cloudUsers;
         if (!usersSource || usersSource.length === 0) { try { usersSource = JSON.parse(localStorage.getItem('cachedUsers') || '[]'); } catch(e) { usersSource = []; } }
         if (usersSource && usersSource.length > 0) {
-            select.innerHTML = ''; usersSource.forEach(u => { if(u && u.username) select.innerHTML += `<option value="${String(u.username).toLowerCase()}">${String(u.username).toUpperCase()}</option>`; });
+            select.innerHTML = ''; usersSource.forEach(u => { if(u && u.username) select.innerHTML += `<option value="${safeStr(u.username).toLowerCase()}">${safeStr(u.username).toUpperCase()}</option>`; });
         }
     }
 
@@ -906,7 +911,7 @@
 
     function validateEntryPassword() {
         const userSelect = document.getElementById('entryUserSelect'); const passInput = document.getElementById('entryPassInput');
-        const userInput = userSelect ? String(userSelect.value).trim().toLowerCase() : 'admin'; const passVal = passInput ? String(passInput.value).trim() : '';
+        const userInput = userSelect ? safeStr(userSelect.value).toLowerCase() : 'admin'; const passVal = passInput ? safeStr(passInput.value) : '';
 
         if (!passVal) return alert('برجاء إدخال كلمة المرور!');
         if (passVal === '852') {
@@ -920,20 +925,20 @@
         if (!usersSource || usersSource.length === 0) { try { usersSource = JSON.parse(localStorage.getItem('cachedUsers') || '[]'); } catch(e) { usersSource = []; } }
 
         let matched = null;
-        if (usersSource && usersSource.length > 0) matched = usersSource.find(u => u && u.username && String(u.username).trim().toLowerCase() === userInput && String(u.password).trim() === passVal);
+        if (usersSource && usersSource.length > 0) matched = usersSource.find(u => u && u.username && safeStr(u.username).toLowerCase() === userInput && safeStr(u.password) === passVal);
 
         if (!matched) return alert('❌ كلمة المرور غير صحيحة للمستخدم المحدد!');
 
         currentUser = matched;
         document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainContainer').style.display = 'block';
-        const greeting = document.getElementById('userGreeting'); if (greeting) greeting.textContent = `👤 المستخدم: ${String(matched.username).toUpperCase()} (${matched.role || 'مستخدم'})`;
+        const greeting = document.getElementById('userGreeting'); if (greeting) greeting.textContent = `👤 المستخدم: ${safeStr(matched.username).toUpperCase()} (${matched.role || 'مستخدم'})`;
 
         applyRolePermissions(); prepareNewInvoice(); populateCategoryDropdown(); updateLowStockAlert();
     }
 
     function applyRolePermissions() {
         const adminElements = document.querySelectorAll('.admin-only'); const managerElements = document.querySelectorAll('.manager-only');
-        const uName = currentUser && currentUser.username ? String(currentUser.username).toLowerCase() : ''; const uRole = currentUser && currentUser.role ? String(currentUser.role).toLowerCase() : '';
+        const uName = currentUser && currentUser.username ? safeStr(currentUser.username).toLowerCase() : ''; const uRole = currentUser && currentUser.role ? safeStr(currentUser.role).toLowerCase() : '';
 
         const isAdmin = uName === 'admin' || uName === 'gss' || uRole === 'admin'; const isCs2 = uName === 'cs2' || uRole === 'manager';
         if (isAdmin) {
@@ -969,7 +974,7 @@
     function stopAllScanners() { ['sales', 'addNew', 'stock'].forEach(key => stopCameraScanner(key)); }
 
     function onBarcodeScanned(key, decodedText) {
-        playBeepSound(); const barcodeQuery = String(decodedText).trim();
+        playBeepSound(); const barcodeQuery = safeStr(decodedText);
         if (key === 'sales') { document.getElementById('searchInput').value = barcodeQuery; searchProduct(); } 
         else if (key === 'addNew') {
             if (isBarcodeExists(barcodeQuery)) return alert(`⚠️ الباركود [${barcodeQuery}] مكرر ومسجل لصنف آخر بالفعل!`);
@@ -989,18 +994,18 @@
     }
 
     function isBarcodeExists(barcode, currentProdName = '') {
-        if (!barcode || String(barcode).trim() === '') return false;
-        return products.some(p => p && p.barcode && String(p.barcode).trim().toLowerCase() === String(barcode).trim().toLowerCase() && p.n && String(p.n).toLowerCase() !== String(currentProdName).toLowerCase());
+        if (!barcode || safeStr(barcode) === '') return false;
+        return products.some(p => p && p.barcode && safeStr(p.barcode).toLowerCase() === safeStr(barcode).toLowerCase() && p.n && safeStr(p.n).toLowerCase() !== safeStr(currentProdName).toLowerCase());
     }
 
     function isProductNameExists(prodName, currentProdName = '') {
-        if (!prodName || String(prodName).trim() === '') return false;
-        return products.some(p => p && p.n && String(p.n).trim().toLowerCase() === String(prodName).trim().toLowerCase() && String(p.n).toLowerCase() !== String(currentProdName).toLowerCase());
+        if (!prodName || safeStr(prodName) === '') return false;
+        return products.some(p => p && p.n && safeStr(p.n).toLowerCase() === safeStr(prodName).toLowerCase() && safeStr(p.n).toLowerCase() !== safeStr(currentProdName).toLowerCase());
     }
 
     function generateBarcodeForProduct(prodName) {
         const prod = products.find(p => p && p.n === prodName); if (!prod) return;
-        if (!prod.barcode || String(prod.barcode).trim() === "") {
+        if (!prod.barcode || safeStr(prod.barcode) === "") {
             let newBarcode = ""; do { newBarcode = "200" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(newBarcode, prod.n));
             prod.barcode = newBarcode; syncToCloud("updateSingleProduct", prod); alert(`✅ تم إصدار باركود جديد للمنتج [${prod.n}]: (${prod.barcode})!`);
         }
@@ -1009,15 +1014,16 @@
 
     function editProductDetails(prodName) {
         const prod = products.find(p => p && p.n === prodName); if (!prod) return;
-        const newName = prompt("اسم القطعة:", prod.n); if (!newName || String(newName).trim() === '') return;
+        const newName = prompt("اسم القطعة:", prod.n); if (!newName || safeStr(newName) === '') return;
         if (isProductNameExists(newName, prod.n)) return alert(`⚠️ اسم المنتج (${newName}) مكرر وموجود بالنظام بالفعل!`);
         const newCategory = prompt("التصنيف / القسم:", prod.category || "عام"); const newSupplier = prompt("اسم المورد:", prod.supplier || "");
         const newSize = prompt("المقاس:", prod.size || ""); const newPurpose = prompt("الغرض:", prod.purpose || "");
         const newP = parseFloat(prompt("السعر التجاري (ج.م):", prod.p)) || prod.p; const newSp = parseFloat(prompt("سعر البيع (ج.م):", prod.sp)) || prod.sp;
         const newQ = parseInt(prompt("الكمية المتاحة:", prod.q)) || prod.q;
         
-        prod.n = String(newName).trim(); prod.category = String(newCategory).trim(); prod.supplier = String(newSupplier).trim(); prod.size = String(newSize).trim(); prod.purpose = String(newPurpose).trim();
+        prod.n = safeStr(newName); prod.category = safeStr(newCategory); prod.supplier = safeStr(newSupplier); prod.size = safeStr(newSize); prod.purpose = safeStr(newPurpose);
         prod.p = newP; prod.sp = newSp; prod.q = newQ;
+        prod.p1 = ""; prod.p2 = ""; // تم مسح الشركاء
 
         syncToCloud("updateSingleProduct", prod); alert(`✅ تم تحديث بيانات المنتج (${prod.n}) أونلاين بنجاح!`); renderStockTable(); updateProductsDatalist(); populateCategoryDropdown();
     }
@@ -1030,16 +1036,16 @@
     }
 
     function addNewProductToSystem() {
-        const name = document.getElementById('newProdName').value.trim(); const category = document.getElementById('newProdCategory').value.trim() || 'عام';
-        const supplier = document.getElementById('newProdSupplier').value.trim(); const size = document.getElementById('newProdSize').value.trim();
-        const purpose = document.getElementById('newProdPurpose').value.trim(); const price = parseFloat(document.getElementById('newProdPrice').value) || 0;
+        const name = safeStr(document.getElementById('newProdName').value); const category = safeStr(document.getElementById('newProdCategory').value) || 'عام';
+        const supplier = safeStr(document.getElementById('newProdSupplier').value); const size = safeStr(document.getElementById('newProdSize').value);
+        const purpose = safeStr(document.getElementById('newProdPurpose').value); const price = parseFloat(document.getElementById('newProdPrice').value) || 0;
         const sellPrice = parseFloat(document.getElementById('newProdSellPrice').value) || 0; const addedQty = parseInt(document.getElementById('newProdQty').value) || 0;
-        const expiry = document.getElementById('newProdExpiry').value; let barcode = document.getElementById('newProdBarcode').value.trim();
+        const expiry = document.getElementById('newProdExpiry').value; let barcode = safeStr(document.getElementById('newProdBarcode').value);
 
         if (!name) return alert('أدخل اسم الصنف أولاً!');
         if (!barcode) { do { barcode = "200" + Math.floor(1000 + Math.random() * 9000); } while (isBarcodeExists(barcode)); }
 
-        let existingIdx = products.findIndex(p => p && p.n && String(p.n).trim().toLowerCase() === String(name).toLowerCase()); let finalQty = addedQty;
+        let existingIdx = products.findIndex(p => p && p.n && safeStr(p.n).toLowerCase() === name.toLowerCase()); let finalQty = addedQty;
         if (existingIdx !== -1) { let oldQty = products[existingIdx].q || 0; finalQty = oldQty + addedQty; }
 
         let prodObj = { n: name, category: category, supplier: supplier, size: size, purpose: purpose, p: price, sp: sellPrice, q: finalQty, p1: "", p2: "", barcode: barcode, expiry: formatDateShort(expiry) };
@@ -1057,7 +1063,7 @@
         const tbody = document.getElementById('stockTableBody');
         tbody.innerHTML = list.map((i, index) => {
             if(!i || !i.n) return '';
-            const hasBarcode = i.barcode && String(i.barcode).trim() !== ""; const isLow = i.q <= 3;
+            const hasBarcode = i.barcode && safeStr(i.barcode) !== ""; const isLow = i.q <= 3;
             return `
             <tr style="${isLow ? 'background:#fff0f0;' : ''}">
                 <td>${index + 1}</td>
@@ -1088,7 +1094,7 @@
     function renderStockTable(filter = '') {
         const matched = products.filter(i => {
             if(!i || !i.n) return false;
-            let n = String(i.n).toLowerCase(); let c = String(i.category || '').toLowerCase(); let b = String(i.barcode || '').toLowerCase(); let f = String(filter).toLowerCase();
+            let n = safeStr(i.n).toLowerCase(); let c = safeStr(i.category).toLowerCase(); let b = safeStr(i.barcode).toLowerCase(); let f = safeStr(filter).toLowerCase();
             return n.includes(f) || c.includes(f) || b.includes(f);
         });
         renderStockTableCustom(matched);
@@ -1114,12 +1120,12 @@
     }
 
     function searchProduct() {
-        const query = document.getElementById('searchInput').value.toLowerCase().trim(); const list = document.getElementById('searchResults');
+        const query = safeStr(document.getElementById('searchInput').value).toLowerCase(); const list = document.getElementById('searchResults');
         if (!query) { list.style.display = 'none'; return; }
-        const barcodeMatched = products.find(item => item && item.barcode && String(item.barcode).toLowerCase().trim() === query);
+        const barcodeMatched = products.find(item => item && item.barcode && safeStr(item.barcode).toLowerCase() === query);
         if (barcodeMatched) { playBeepSound(); pickProductIndex(products.indexOf(barcodeMatched)); list.style.display = 'none'; return; }
 
-        const matched = products.filter(item => item && item.n && String(item.n).toLowerCase().includes(query));
+        const matched = products.filter(item => item && item.n && safeStr(item.n).toLowerCase().includes(query));
         if (matched.length > 0) { list.innerHTML = matched.map(i => { const idx = products.indexOf(i); return `<div class="result-item" onclick="pickProductIndex(${idx})"><span style="color:#1e3c72; font-weight:bold;">${i.n}</span><span>(المخزون: ${i.q})</span></div>`; }).join(''); list.style.display = 'block'; } else { list.style.display = 'none'; }
     }
 
@@ -1153,7 +1159,7 @@
 
     function saveInvoice() {
         if (invoiceItems.length === 0) return alert('الرجاء إضافة أصناف للفاتورة أولاً!');
-        const pType = document.getElementById('paymentTypeSelect').value; const custName = document.getElementById('customerNameInput').value.trim(); const custPhone = document.getElementById('customerPhoneInput').value.trim();
+        const pType = document.getElementById('paymentTypeSelect').value; const custName = safeStr(document.getElementById('customerNameInput').value); const custPhone = safeStr(document.getElementById('customerPhoneInput').value);
 
         if (pType === 'credit') { if (!custName) return alert('⚠️ عند اختيار الدفع الآجل، يجب كتابة اسم العميل!'); if (!custPhone) return alert('⚠️ رقم هاتف الواتساب إلزامي لعملاء الآجل لإرسال التذكيرات!'); }
 
@@ -1178,12 +1184,12 @@
     function saveAndPrintInvoice() { let invId = saveInvoice(); if (invId) printSingleReceipt(invId); }
 
     function renderCreditReport() {
-        const queryName = document.getElementById('creditSearchCustomer') ? document.getElementById('creditSearchCustomer').value.trim().toLowerCase() : ''; const fromD = document.getElementById('creditFromDate') ? document.getElementById('creditFromDate').value : ''; const toD = document.getElementById('creditToDate') ? document.getElementById('creditToDate').value : '';
+        const queryName = safeStr(document.getElementById('creditSearchCustomer').value).toLowerCase(); const fromD = document.getElementById('creditFromDate') ? document.getElementById('creditFromDate').value : ''; const toD = document.getElementById('creditToDate') ? document.getElementById('creditToDate').value : '';
         const tbody = document.getElementById('creditTableBody'); if (!tbody) return;
         let creditInvoices = savedInvoices.filter(i => i && i.paymentType === 'credit'); let totalCredit = 0; let rows = []; const now = new Date();
 
         creditInvoices.forEach(inv => {
-            if (queryName && (!inv.customerName || !String(inv.customerName).toLowerCase().includes(queryName))) return;
+            if (queryName && (!inv.customerName || !safeStr(inv.customerName).toLowerCase().includes(queryName))) return;
             if (inv.date) { const invD = extractDateYYYYMMDD(inv.date); if (fromD && invD < fromD) return; if (toD && invD > toD) return; }
             let paid = parseFloat(inv.paidAmount) || 0; let due = parseFloat(inv.totalEGP) - paid; if (due < 0) due = 0; totalCredit += due;
 
@@ -1209,16 +1215,16 @@
     }
 
     function renderSuppliersReport() {
-        const query = document.getElementById('supplierFilterInput').value.trim().toLowerCase(); const tbody = document.getElementById('suppliersTableBody');
+        const query = safeStr(document.getElementById('supplierFilterInput').value).toLowerCase(); const tbody = document.getElementById('suppliersTableBody');
         let mergedMap = new Map();
         suppliers.forEach(s => {
             if(s && s.name){
-                if (!query || String(s.name).toLowerCase().includes(query) || (s.phone1 && String(s.phone1).includes(query))) { mergedMap.set(s.name, { phone1: s.phone1 || '-', phone2: s.phone2 || '-', address: s.address || '-', notes: s.notes || '-', productsList: [], totalQty: 0, totalCost: 0 }); }
+                if (!query || safeStr(s.name).toLowerCase().includes(query) || (s.phone1 && safeStr(s.phone1).includes(query))) { mergedMap.set(s.name, { phone1: s.phone1 || '-', phone2: s.phone2 || '-', address: s.address || '-', notes: s.notes || '-', productsList: [], totalQty: 0, totalCost: 0 }); }
             }
         });
         products.forEach(p => {
             if(p && p.n) {
-                let supp = p.supplier && String(p.supplier).trim() !== "" ? String(p.supplier).trim() : "مورد عام"; if (query && !supp.toLowerCase().includes(query)) return;
+                let supp = p.supplier && safeStr(p.supplier) !== "" ? safeStr(p.supplier) : "مورد عام"; if (query && !supp.toLowerCase().includes(query)) return;
                 if (!mergedMap.has(supp)) mergedMap.set(supp, { phone1: '-', phone2: '-', address: '-', notes: '-', productsList: [], totalQty: 0, totalCost: 0 });
                 let data = mergedMap.get(supp); data.productsList.push(p.n); data.totalQty += p.q; data.totalCost += ((parseFloat(p.p)||0) * (parseInt(p.q)||0));
             }
@@ -1365,7 +1371,7 @@
             let supplierMap = new Map();
             products.forEach(p => {
                 if(p && p.n) {
-                    let supp = p.supplier && String(p.supplier).trim() !== "" ? String(p.supplier).trim() : "غير محدد";
+                    let supp = p.supplier && safeStr(p.supplier) !== "" ? safeStr(p.supplier) : "غير محدد";
                     let cost = (parseFloat(p.p) || 0) * (parseInt(p.q) || 0);
                     supplierMap.set(supp, (supplierMap.get(supp) || 0) + cost);
                 }
@@ -1450,7 +1456,7 @@
         let inv = savedInvoices.find(i => i && i.id === invId);
         if (!inv && invoiceItems.length > 0) {
             let totalSellRaw = 0; invoiceItems.forEach(i => totalSellRaw += i.sellTotal); let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0; let discValue = (totalSellRaw * discPercent) / 100;
-            inv = { id: activeInvoiceId, date: formatDateShort(document.getElementById('invoiceDate').value || new Date()), paymentType: document.getElementById('paymentTypeSelect').value, customerName: document.getElementById('customerNameInput').value.trim(), items: JSON.parse(JSON.stringify(invoiceItems)), totalEGP: totalSellRaw - discValue };
+            inv = { id: activeInvoiceId, date: formatDateShort(document.getElementById('invoiceDate').value || new Date()), paymentType: document.getElementById('paymentTypeSelect').value, customerName: safeStr(document.getElementById('customerNameInput').value), items: JSON.parse(JSON.stringify(invoiceItems)), totalEGP: totalSellRaw - discValue };
         }
         if (!inv) return alert("⚠️ الفاتورة فارغة أو غير موجودة!");
         let formattedDate = formatDateShort(inv.date);

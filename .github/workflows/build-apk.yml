@@ -26,10 +26,15 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Capacitor and Plugins
+      - name: Clean Gradle Caches
+        run: |
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/daemon/
+
+      - name: Install Dependencies
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           npm install @capacitor/app @capacitor/filesystem @capacitor/share
 
       - name: Prepare Web Assets
@@ -42,7 +47,7 @@ jobs:
         run: |
           npx cap add android || npx cap sync android
           cd android
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon --no-build-cache
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

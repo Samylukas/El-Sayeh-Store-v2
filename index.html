@@ -55,6 +55,7 @@
         .sync-status { text-align: center; font-size: 0.85rem; font-weight: 800; margin-bottom: 6px; padding: 4px; border-radius: 6px; }
         .status-online { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
         .status-syncing { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+        .status-error { background: #fdecea; color: #e74c3c; border: 1px solid #f5b7b1; }
 
         .alerts-bar { background: #fff8e7; border: 1px solid #ffe8b3; color: #b78103; padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
 
@@ -108,7 +109,6 @@
         .scanner-box { display: none; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; text-align: center; }
         .camera-div { width: 100%; max-width: 350px; margin: 0 auto; min-height: 180px; }
 
-        /* منطقة الطباعة المباشرة لتطبيقات الأندرويد */
         #appPrintArea { display: none; }
 
         /* PDF & Print Specific Styles */
@@ -246,6 +246,7 @@
         <button class="tab-btn manager-only" id="btnAddStockTab" onclick="showTab('addStockTab', event)">➕ إضافة أصناف</button>
         <button class="tab-btn admin-only" id="btnCreditTab" onclick="showTab('creditTab', event)">📝 آجل العملاء</button>
         <button class="tab-btn admin-only" id="btnSuppliersTab" onclick="showTab('suppliersTab', event)">🚚 الموردين والمشتريات</button>
+        <button class="tab-btn admin-only" id="btnFinanceTab" onclick="showTab('financeTab', event)">💵 المصروفات</button>
         <button class="tab-btn admin-only" id="btnReportsTab" onclick="showTab('reportsTab', event)">📊 التقارير والإحصائيات</button>
         <button class="tab-btn admin-only" id="btnUsersTab" onclick="showTab('usersTab', event)">🔑 الحسابات</button>
     </div>
@@ -622,7 +623,7 @@
         const select = document.getElementById('categoryFilterSelect');
         if (!select) return;
         let categories = new Set();
-        products.forEach(p => { if (p.category && p.category.trim() !== "") categories.add(p.category.trim()); });
+        products.forEach(p => { if (p.category && String(p.category).trim() !== "") categories.add(String(p.category).trim()); });
         select.innerHTML = '<option value="ALL">الكل (جميع التصنيفات)</option>';
         categories.forEach(cat => select.innerHTML += `<option value="${cat}">${cat}</option>`);
     }
@@ -792,7 +793,7 @@
 
         const script = document.createElement('script');
         script.id = scriptId; script.src = src;
-        script.onerror = function() { if (ind) { ind.className = 'sync-status status-syncing'; ind.textContent = '🔴 يعمل في الوضع الأوفلاين'; } };
+        script.onerror = function() { if (ind) { ind.className = 'sync-status status-error'; ind.textContent = '🔴 يعمل في الوضع الأوفلاين'; } };
         document.body.appendChild(script);
     }
 
@@ -808,25 +809,31 @@
     function fetchCloudData() {
         syncPendingInvoicesFirst(() => {
             window.handleCloudInvoicesResponse = function(resData) {
-                const ind = document.getElementById('syncIndicator');
-                if (resData && resData.status === "success") {
-                    if (resData.users && resData.users.length > 0) { cloudUsers = resData.users; localStorage.setItem('cachedUsers', JSON.stringify(cloudUsers)); populateUsersDropdown(); populateLoginUsersSelect(); }
-                    if (resData.products) {
-                        resData.products.forEach(cloudP => {
-                            let localP = products.find(p => p.n.trim().toLowerCase() === cloudP.n.trim().toLowerCase());
-                            if (localP && localP.category && (!cloudP.category || cloudP.category === 'عام')) cloudP.category = localP.category;
-                        });
-                        products = resData.products;
-                    }
-                    if (resData.suppliers) suppliers = resData.suppliers;
-                    if (resData.invoices) {
-                        let cloudInvMap = new Map(); resData.invoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices = Array.from(cloudInvMap.values()).sort((a,b) => a.id - b.id);
-                    }
-                    if (resData.finance) { savedFinanceEntries = resData.finance; renderFinanceReport(); }
-                    if (resData.nextInvoiceId) { let maxId = savedInvoices.length > 0 ? Math.max(...savedInvoices.map(i => i.id)) : 1000; invoiceCounter = Math.max(resData.nextInvoiceId, maxId + 1); }
+                try {
+                    const ind = document.getElementById('syncIndicator');
+                    if (resData && resData.status === "success") {
+                        if (resData.users && resData.users.length > 0) { cloudUsers = resData.users; localStorage.setItem('cachedUsers', JSON.stringify(cloudUsers)); populateUsersDropdown(); populateLoginUsersSelect(); }
+                        if (resData.products) {
+                            resData.products.forEach(cloudP => {
+                                let localP = products.find(p => p.n && cloudP.n && String(p.n).trim().toLowerCase() === String(cloudP.n).trim().toLowerCase());
+                                if (localP && localP.category && (!cloudP.category || String(cloudP.category).trim() === 'عام')) cloudP.category = localP.category;
+                            });
+                            products = resData.products;
+                        }
+                        if (resData.suppliers) suppliers = resData.suppliers;
+                        if (resData.invoices) {
+                            let cloudInvMap = new Map(); resData.invoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices = Array.from(cloudInvMap.values()).sort((a,b) => a.id - b.id);
+                        }
+                        if (resData.finance) { savedFinanceEntries = resData.finance; renderFinanceReport(); }
+                        if (resData.nextInvoiceId) { let maxId = savedInvoices.length > 0 ? Math.max(...savedInvoices.map(i => i.id)) : 1000; invoiceCounter = Math.max(resData.nextInvoiceId, maxId + 1); }
 
-                    renderStockTable(); updateLowStockAlert(); populateCategoryDropdown(); updateCustomersDatalist(); updateSuppliersDatalist(); updateProductsDatalist();
-                    if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
+                        renderStockTable(); updateLowStockAlert(); populateCategoryDropdown(); updateCustomersDatalist(); updateSuppliersDatalist(); updateProductsDatalist();
+                        if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
+                    }
+                } catch (e) {
+                    console.error("Parse Error: ", e);
+                    const ind = document.getElementById('syncIndicator');
+                    if (ind) { ind.className = 'sync-status status-error'; ind.textContent = '🔴 حدث خطأ أثناء معالجة البيانات'; }
                 }
             };
             jsonpRequest("getData", null, "handleCloudInvoicesResponse");
@@ -970,7 +977,7 @@
         prod.p = newP; prod.sp = newSp; prod.q = newQ;
         prod.p1 = ""; prod.p2 = ""; // تم مسح الشركاء
 
-        syncToCloud("updateSingleProduct", prod); alert(`✅ تم تحديث بيانات المنتج (${newName}) أونلاين بنجاح!`); renderStockTable(); updateProductsDatalist();
+        syncToCloud("updateSingleProduct", prod); alert(`✅ تم تحديث بيانات المنتج (${newName}) أونلاين بنجاح!`); renderStockTable(); updateProductsDatalist(); populateCategoryDropdown();
     }
 
     function deleteProductFromSystem(prodName) {
@@ -1189,7 +1196,7 @@
         if (confirm(`⚠️ هل أنت تأكد من حذف الفاتورة رقم #${invId}؟ سيتم مسحها من السيرفر وإرجاع كمياتها للمخزون.`)) {
             const inv = savedInvoices[invIndex];
             if (inv.items && Array.isArray(inv.items)) { inv.items.forEach(item => { const pObj = products.find(p => p.n === item.name); if (pObj) { pObj.q += item.qty; syncToCloud("updateSingleProduct", pObj); } }); }
-            savedInvoices.splice(invIndex, 1); syncToCloud("deleteInvoice", { id: invId }); renderStockTable(); renderCreditReport(); updateLowStockAlert(); alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
+            savedInvoices.splice(invIndex, 1); syncToCloud("deleteInvoice", { id: invId }); renderStockTable(); renderCreditReport(); generateReport(); updateLowStockAlert(); alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
         }
     }
 
@@ -1293,7 +1300,7 @@
         totalNetProfit = (totalNetProfit + totalAddRevenues) - totalExpenses;
 
         if (rType === 'charts') {
-            reportTablesArea.style.display = 'none'; chartsArea.style.display = 'flex';
+            reportTablesArea.style.display = 'none'; chartsArea.style.display = 'flex'; document.getElementById('profitBox').style.display = 'none';
             document.getElementById('reportPrintTitle').innerHTML = `📊 لوحة المؤشرات البيانية (Dashboard) <br><span style="font-size:10pt; color:#666;">(${fromD||'بداية'} ➡ ${toD||'اليوم'})</span>`; document.getElementById('reportPrintTitle').style.display = 'block';
             
             if(window.cCat) window.cCat.destroy(); if(window.cDay) window.cDay.destroy(); if(window.cTop) window.cTop.destroy();

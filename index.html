@@ -55,7 +55,6 @@
         .sync-status { text-align: center; font-size: 0.85rem; font-weight: 800; margin-bottom: 6px; padding: 4px; border-radius: 6px; }
         .status-online { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
         .status-syncing { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
-        .status-error { background: #fdecea; color: #e74c3c; border: 1px solid #f5b7b1; }
 
         .alerts-bar { background: #fff8e7; border: 1px solid #ffe8b3; color: #b78103; padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
 
@@ -351,7 +350,10 @@
 
     <!-- 2. تفاصيل المخزون -->
     <div id="stockTab" class="tab-content manager-only">
-        <div class="section-title">📦 تفاصيل المخزون والباركود</div>
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
+            <span>📦 تفاصيل المخزون والباركود</span>
+            <div style="display: flex; gap: 4px;"></div>
+        </div>
         <input type="text" id="stockFilterInput" class="search-box" autocomplete="off" placeholder="تصفية باسم القطعة، التصنيف أو الباركود..." oninput="filterStockTable(this.value)">
 
         <div id="stockScannerContainer" class="scanner-box" style="margin-top:8px;">
@@ -359,12 +361,15 @@
             <button class="btn btn-red" style="margin:6px auto; width:90%; padding:6px;" onclick="stopCameraScanner('stock')">إغلاق الكاميرا ❌</button>
         </div>
 
-        <div class="table-responsive"><table>
-            <thead>
-                <tr><th>#</th><th>القطعة</th><th>التصنيف</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>الباركود</th><th>المورد</th><th class="no-pdf">إجراء</th></tr>
-            </thead>
-            <tbody id="stockTableBody"></tbody>
-        </table></div>
+        <div id="stockPrintWrapper">
+            <h3 id="stockPrintTitle" class="report-title-header"></h3>
+            <div class="table-responsive"><table>
+                <thead>
+                    <tr><th>#</th><th>القطعة</th><th>التصنيف</th><th>المقاس</th><th>الغرض</th><th>التكلفة</th><th>البيع</th><th>الكمية</th><th>الباركود</th><th>المورد</th><th class="no-pdf">إجراء</th></tr>
+                </thead>
+                <tbody id="stockTableBody"></tbody>
+            </table></div>
+        </div>
     </div>
 
     <!-- 3. إضافة صنف جديد -->
@@ -791,7 +796,7 @@
         setTimeout(() => {
             const splash = document.getElementById('splashScreen');
             if (splash) { splash.style.opacity = '0'; splash.style.visibility = 'hidden'; }
-        }, 1800);
+        }, 1500);
 
         checkMonthlySubscription();
         fetchCloudData();
@@ -817,7 +822,7 @@
 
         const script = document.createElement('script');
         script.id = scriptId; script.src = src;
-        script.onerror = function() { if (ind) { ind.className = 'sync-status status-error'; ind.textContent = '🔴 يعمل في الوضع الأوفلاين'; } };
+        script.onerror = function() { if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🔴 يعمل في الوضع الأوفلاين'; } };
         document.body.appendChild(script);
     }
 
@@ -832,35 +837,34 @@
 
     function fetchCloudData() {
         syncPendingInvoicesFirst(() => {
+            // هذا هو الكود الأصلي والمستقر بالظبط لقراءة البيانات، بدون أي Try..Catch يوقف البرنامج!
             window.handleCloudInvoicesResponse = function(resData) {
-                try {
-                    const ind = document.getElementById('syncIndicator');
-                    if (resData && resData.status === "success") {
-                        if (resData.users && resData.users.length > 0) { cloudUsers = resData.users; localStorage.setItem('cachedUsers', JSON.stringify(cloudUsers)); populateUsersDropdown(); populateLoginUsersSelect(); }
-                        if (resData.products) {
-                            // حماية قوية ضد الصفوف الفارغة في الشيت
-                            resData.products.forEach(cloudP => {
-                                if (!cloudP || !cloudP.n) return;
-                                let localP = products.find(p => p.n && String(p.n).trim().toLowerCase() === String(cloudP.n).trim().toLowerCase());
-                                if (localP && localP.category && (!cloudP.category || String(cloudP.category).trim() === 'عام')) cloudP.category = localP.category;
-                            });
-                            // تنظيف المصفوفة من العناصر الفارغة
-                            products = resData.products.filter(p => p && p.n);
-                        }
-                        if (resData.suppliers) suppliers = resData.suppliers;
-                        if (resData.invoices) {
-                            let cloudInvMap = new Map(); resData.invoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices = Array.from(cloudInvMap.values()).sort((a,b) => a.id - b.id);
-                        }
-                        if (resData.finance) { savedFinanceEntries = resData.finance; renderFinanceReport(); }
-                        if (resData.nextInvoiceId) { let maxId = savedInvoices.length > 0 ? Math.max(...savedInvoices.map(i => i.id)) : 1000; invoiceCounter = Math.max(resData.nextInvoiceId, maxId + 1); }
-
-                        renderStockTable(); updateLowStockAlert(); populateCategoryDropdown(); updateCustomersDatalist(); updateSuppliersDatalist(); updateProductsDatalist();
-                        if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
+                const ind = document.getElementById('syncIndicator');
+                if (resData && resData.status === "success") {
+                    if (resData.users && resData.users.length > 0) { 
+                        cloudUsers = resData.users; 
+                        localStorage.setItem('cachedUsers', JSON.stringify(cloudUsers)); 
+                        populateUsersDropdown(); 
+                        populateLoginUsersSelect(); 
                     }
-                } catch (e) {
-                    console.error("Parse Error: ", e);
-                    const ind = document.getElementById('syncIndicator');
-                    if (ind) { ind.className = 'sync-status status-error'; ind.textContent = '🔴 حدث خطأ أثناء معالجة البيانات'; }
+                    if (resData.products) {
+                        resData.products.forEach(cloudP => {
+                            let localP = products.find(p => p.n.trim().toLowerCase() === cloudP.n.trim().toLowerCase());
+                            if (localP && localP.category && (!cloudP.category || cloudP.category === 'عام')) {
+                                cloudP.category = localP.category;
+                            }
+                        });
+                        products = resData.products;
+                    }
+                    if (resData.suppliers) suppliers = resData.suppliers;
+                    if (resData.invoices) {
+                        let cloudInvMap = new Map(); resData.invoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices.forEach(i => cloudInvMap.set(i.id, i)); savedInvoices = Array.from(cloudInvMap.values()).sort((a,b) => a.id - b.id);
+                    }
+                    if (resData.finance) { savedFinanceEntries = resData.finance; renderFinanceReport(); }
+                    if (resData.nextInvoiceId) { let maxId = savedInvoices.length > 0 ? Math.max(...savedInvoices.map(i => i.id)) : 1000; invoiceCounter = Math.max(resData.nextInvoiceId, maxId + 1); }
+
+                    renderStockTable(); updateLowStockAlert(); populateCategoryDropdown(); updateCustomersDatalist(); updateSuppliersDatalist(); updateProductsDatalist();
+                    if (ind) { ind.className = 'sync-status status-online'; ind.textContent = '🟢 متصل أونلاين'; }
                 }
             };
             jsonpRequest("getData", null, "handleCloudInvoicesResponse");
@@ -1002,7 +1006,7 @@
         
         prod.n = newName; prod.category = newCategory; prod.supplier = newSupplier; prod.size = newSize; prod.purpose = newPurpose;
         prod.p = newP; prod.sp = newSp; prod.q = newQ;
-        prod.p1 = ""; prod.p2 = "";
+        prod.p1 = ""; prod.p2 = ""; // تم مسح الشركاء
 
         syncToCloud("updateSingleProduct", prod); alert(`✅ تم تحديث بيانات المنتج (${newName}) أونلاين بنجاح!`); renderStockTable(); updateProductsDatalist(); populateCategoryDropdown();
     }
@@ -1223,10 +1227,11 @@
         if (confirm(`⚠️ هل أنت تأكد من حذف الفاتورة رقم #${invId}؟ سيتم مسحها من السيرفر وإرجاع كمياتها للمخزون.`)) {
             const inv = savedInvoices[invIndex];
             if (inv.items && Array.isArray(inv.items)) { inv.items.forEach(item => { const pObj = products.find(p => p.n === item.name); if (pObj) { pObj.q += item.qty; syncToCloud("updateSingleProduct", pObj); } }); }
-            savedInvoices.splice(invIndex, 1); syncToCloud("deleteInvoice", { id: invId }); renderStockTable(); renderCreditReport(); updateLowStockAlert(); alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
+            savedInvoices.splice(invIndex, 1); syncToCloud("deleteInvoice", { id: invId }); renderStockTable(); renderCreditReport(); generateReport(); updateLowStockAlert(); alert(`✅ تم حذف الفاتورة رقم #${invId} بنجاح!`);
         }
     }
 
+    // منطق التقارير الشامل المحدث
     function generateReport() {
         const fromD = document.getElementById('fromDate').value; const toD = document.getElementById('toDate').value;
         const selectedCategory = document.getElementById('categoryFilterSelect') ? document.getElementById('categoryFilterSelect').value : "ALL";
@@ -1287,6 +1292,7 @@
             return;
         }
 
+        // Logic for Sales, Profits & Charts
         let totalSell = 0, totalComm = 0, totalNetProfit = 0;
         let reportRows = []; let categoryMap = new Map(); let dailyMap = new Map(); let topItemsMap = new Map();
 

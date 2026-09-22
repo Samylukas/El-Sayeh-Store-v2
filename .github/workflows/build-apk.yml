@@ -24,7 +24,6 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          # هنا تم التحديث للإصدار 21 لحل المشكلة فوراً
           java-version: '21'
 
       - name: Install Dependencies
@@ -39,9 +38,14 @@ jobs:
           cp index.html www/
           cp manifest.json www/ 2>/dev/null || :
 
-      - name: Build Android App
+      - name: Build Android App & Inject Permissions
         run: |
           npx cap add android || npx cap sync android
+          
+          # حقن تصاريح الكاميرا إجبارياً في ملف AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-feature android:name="android.hardware.camera" android:required="false" />' android/app/src/main/AndroidManifest.xml
+          
           cd android
           ./gradlew assembleDebug --no-daemon
 

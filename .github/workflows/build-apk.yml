@@ -31,6 +31,7 @@ jobs:
           npm init -y
           npm install @capacitor/core@5.7.0 @capacitor/cli@5.7.0 @capacitor/android@5.7.0
           npm install @capacitor/app@5.0.7 @capacitor/filesystem@5.2.1 @capacitor/share@5.0.7
+          npm install @capacitor/camera
 
       - name: Prepare Web Assets
         run: |

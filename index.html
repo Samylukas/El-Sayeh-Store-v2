@@ -1503,66 +1503,66 @@
     
     function executeNativePrint() { window.print(); document.getElementById('appPrintArea').innerHTML = ''; }
 
+    // --- NEW ANDROID INTENT LOGIC ---
+    function executeAndroidIntent(intentUrl) {
+        const a = document.createElement('a');
+        a.href = intentUrl;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click(); // المتصفح الآن سيستجيب مجبراً
+        setTimeout(() => document.body.removeChild(a), 500);
+    }
+
     function openAndroidLabelApp(name, price, barcode) {
         const encName = encodeURIComponent(name);
         const encPrice = encodeURIComponent(price);
         const encBarcode = encodeURIComponent(barcode);
         const intentUrl = `intent://print?type=label&name=${encName}&price=${encPrice}&barcode=${encBarcode}#Intent;scheme=elsayeh;package=com.example.printer;end`;
-        window.location.href = intentUrl;
+        executeAndroidIntent(intentUrl);
     }
 
     function printBarcodeLabel(prodName) {
-        const prod = products.find(p => p && p.n === prodName); 
+        const prod = products.find(p => p && p.n === prodName);
         if (!prod || !prod.barcode) return alert("⚠️ هذا المنتج لا يملك باركود بعد!");
         openAndroidLabelApp(prod.n, prod.sp, prod.barcode);
     }
 
     function openAndroidPrintApp(textPayload) {
-        // تشفير النص ليكون صالحاً للإرسال عبر الرابط
         const encodedPayload = encodeURIComponent(textPayload);
-        
-        // إنشاء الرابط العميق (Deep Link) الخاص بتطبيقنا
         const intentUrl = `intent://print?text=${encodedPayload}#Intent;scheme=elsayeh;package=com.example.printer;end`;
-
-        // توجيه المتصفح لفتح التطبيق
-        window.location.href = intentUrl;
+        executeAndroidIntent(intentUrl);
     }
 
-    // تعديل الدالة القديمة الخاصة بك لتقوم بفتح التطبيق
     function printSingleReceipt(invId) {
         let inv = savedInvoices.find(i => i && i.id === invId);
-        
-        // استرجاع الكود الأصلي لتجميع الفاتورة غير المحفوظة
+
         if (!inv && invoiceItems.length > 0) {
-            let totalSellRaw = 0; 
-            invoiceItems.forEach(i => totalSellRaw += i.sellTotal); 
-            let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0; 
+            let totalSellRaw = 0;
+            invoiceItems.forEach(i => totalSellRaw += i.sellTotal);
+            let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0;
             let discValue = (totalSellRaw * discPercent) / 100;
-            
-            inv = { 
-                id: activeInvoiceId, 
-                date: formatDateShort(document.getElementById('invoiceDate').value || new Date()), 
-                paymentType: document.getElementById('paymentTypeSelect').value, 
-                customerName: safeStr(document.getElementById('customerNameInput').value), 
-                items: JSON.parse(JSON.stringify(invoiceItems)), 
-                totalEGP: totalSellRaw - discValue 
+
+            inv = {
+                id: activeInvoiceId,
+                date: formatDateShort(document.getElementById('invoiceDate').value || new Date()),
+                paymentType: document.getElementById('paymentTypeSelect').value,
+                customerName: safeStr(document.getElementById('customerNameInput').value),
+                items: JSON.parse(JSON.stringify(invoiceItems)),
+                totalEGP: totalSellRaw - discValue
             };
         }
-        
+
         if (!inv) return alert("⚠️ الفاتورة فارغة أو غير موجودة!");
-        
-        // إعداد النص الذي سيُطبع في تطبيق الأندرويد
+
         let textPayload = `فاتورة رقم: #${inv.id}\nالتاريخ: ${formatDateShort(inv.date)}\n------------------\n`;
-        
+
         if (inv.items && inv.items.length > 0) {
-            inv.items.forEach(i => { 
-                textPayload += `${i.name} (${i.qty}) = ${(i.sellTotal||0).toFixed(2)} ج.م\n`; 
+            inv.items.forEach(i => {
+                textPayload += `${i.name} (${i.qty}) = ${(i.sellTotal||0).toFixed(2)} ج.م\n`;
             });
         }
-        
+
         textPayload += `------------------\nالإجمالي: ${(inv.totalEGP || 0).toFixed(2)} ج.م`;
-        
-        // توجيه المتصفح لفتح تطبيق الأندرويد وإرسال النص
         openAndroidPrintApp(textPayload);
     }
 </script>

@@ -1512,25 +1512,54 @@
         openPrintModal(html, textPayload);
     }
 
-    function printSingleReceipt(invId) {
-        let inv = savedInvoices.find(i => i && i.id === invId);
-        if (!inv && invoiceItems.length > 0) {
-            let totalSellRaw = 0; invoiceItems.forEach(i => totalSellRaw += i.sellTotal); let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0; let discValue = (totalSellRaw * discPercent) / 100;
-            inv = { id: activeInvoiceId, date: formatDateShort(document.getElementById('invoiceDate').value || new Date()), paymentType: document.getElementById('paymentTypeSelect').value, customerName: safeStr(document.getElementById('customerNameInput').value), items: JSON.parse(JSON.stringify(invoiceItems)), totalEGP: totalSellRaw - discValue };
-        }
-        if (!inv) return alert("⚠️ الفاتورة فارغة أو غير موجودة!");
-        let formattedDate = formatDateShort(inv.date);
+    function openAndroidPrintApp(textPayload) {
+    // تشفير النص ليكون صالحاً للإرسال عبر الرابط
+    const encodedPayload = encodeURIComponent(textPayload);
+    
+    // إنشاء الرابط العميق (Deep Link) الخاص بتطبيقنا
+    const intentUrl = `intent://print?text=${encodedPayload}#Intent;scheme=elsayeh;package=com.example.printer;end`;
+
+    // توجيه المتصفح لفتح التطبيق
+    window.location.href = intentUrl;
+}
+
+// تعديل الدالة القديمة الخاصة بك لتقوم بفتح التطبيق
+function printSingleReceipt(invId) {
+    let inv = savedInvoices.find(i => i && i.id === invId);
+    
+    // استرجاع الكود الأصلي لتجميع الفاتورة غير المحفوظة
+    if (!inv && invoiceItems.length > 0) {
+        let totalSellRaw = 0; 
+        invoiceItems.forEach(i => totalSellRaw += i.sellTotal); 
+        let discPercent = parseFloat(document.getElementById('invoiceDiscountPercent').value) || 0; 
+        let discValue = (totalSellRaw * discPercent) / 100;
         
-        let html = `<div style="width: 100%; max-width: 80mm; margin: 0 auto; text-align: center; color: #000; font-family: 'Cairo', sans-serif; padding: 5px; direction: rtl;"><div style="font-size:16px; font-weight:bold;">⚙️ El Sayeh Store</div><div style="font-size:12px; margin-bottom:5px;">مركز السائح لقطع غيار السيارات</div><div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:5px 0; margin-bottom:5px;"><div style="font-size:12px; text-align:right;">رقم الفاتورة: <b>#${inv.id}</b></div><div style="font-size:12px; text-align:right;">الدفع: ${inv.paymentType === 'credit' ? 'آجل ('+(inv.customerName||'عميل')+')' : 'نقدي'}</div><div style="font-size:12px; text-align:right;">التاريخ: ${formattedDate}</div></div><table style="width:100%; border-collapse:collapse; font-size:12px; text-align:right; margin-bottom:5px;"><thead><tr style="border-bottom:1px solid #000;"><th style="text-align:right;">الصنف</th><th style="text-align:center;">العدد</th><th style="text-align:left;">الإجمالي</th></tr></thead><tbody>`;
-        let textPayload = `⚙️ El Sayeh Store\nمركز السائح لقطع غيار السيارات\n------------------\nفاتورة رقم: #${inv.id}\nالنوع: ${inv.paymentType === 'credit' ? 'آجل' : 'نقدي'}\nالتاريخ: ${formattedDate}\n------------------\n`;
-        if (inv.items && inv.items.length > 0) {
-            inv.items.forEach(i => { html += `<tr><td style="text-align:right;">${i.name}</td><td style="text-align:center;">${i.qty}</td><td style="text-align:left;">${(i.sellTotal||0).toFixed(2)}</td></tr>`; textPayload += `${i.name}\n ${i.qty} قطعة = ${(i.sellTotal||0).toFixed(2)} ج.م\n`; });
-        }
-        html += `</tbody></table><div style="border-top:1px dashed #000; margin-top:5px; padding-top:5px;"><h3 style="text-align:center; font-size:14px; margin:3px 0;">الإجمالي النهائي: ${(inv.totalEGP || 0).toFixed(2)} ج.م</h3></div><p style="font-size:10px; margin-top:8px;">شكراً لزيارتكم! نتشرف بتميزكم دائماً</p></div>`;
-        textPayload += `------------------\nالإجمالي النهائي: ${(inv.totalEGP || 0).toFixed(2)} ج.م\nشكراً لزيارتكم!`;
-        
-        openPrintModal(html, textPayload);
+        inv = { 
+            id: activeInvoiceId, 
+            date: formatDateShort(document.getElementById('invoiceDate').value || new Date()), 
+            paymentType: document.getElementById('paymentTypeSelect').value, 
+            customerName: safeStr(document.getElementById('customerNameInput').value), 
+            items: JSON.parse(JSON.stringify(invoiceItems)), 
+            totalEGP: totalSellRaw - discValue 
+        };
     }
+    
+    if (!inv) return alert("⚠️ الفاتورة فارغة أو غير موجودة!");
+    
+    // إعداد النص الذي سيُطبع في تطبيق الأندرويد
+    let textPayload = `فاتورة رقم: #${inv.id}\nالتاريخ: ${formatDateShort(inv.date)}\n------------------\n`;
+    
+    if (inv.items && inv.items.length > 0) {
+        inv.items.forEach(i => { 
+            textPayload += `${i.name} (${i.qty}) = ${(i.sellTotal||0).toFixed(2)} ج.م\n`; 
+        });
+    }
+    
+    textPayload += `------------------\nالإجمالي: ${(inv.totalEGP || 0).toFixed(2)} ج.م`;
+    
+    // توجيه المتصفح لفتح تطبيق الأندرويد وإرسال النص
+    openAndroidPrintApp(textPayload);
+}
 </script>
 </body>
 </html>
